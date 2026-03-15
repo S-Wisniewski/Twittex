@@ -11,8 +11,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate-secrets:
+    name: Validate Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.MAIL_USERNAME }}" ]; then
+            echo "Error: MAIL_USERNAME secret is not set."
+            exit 1
+          fi
+          if [ -z "${{ secrets.MAIL_PASSWORD }}" ]; then
+            echo "Error: MAIL_PASSWORD secret is not set."
+            exit 1
+          fi
+          echo "All required secrets are set."
+
   quality-frontend:
     name: Frontend Quality
+    needs: validate-secrets
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,6 +46,7 @@ jobs:
 
   quality-backend:
     name: Backend Quality
+    needs: validate-secrets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +84,7 @@ jobs:
 
   summary:
     name: Summary
-    needs: build
+    needs: [quality-frontend, quality-backend, build]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -79,7 +97,7 @@ jobs:
 
   notify:
     name: Email Notification
-    needs: build
+    needs: [quality-frontend, quality-backend, build]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -106,7 +124,7 @@ jobs:
             Szczegóły akcji: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Send Failure Mail
-        if: ${{ needs.build.result == 'failure' || needs.quality-frontend.result == 'failure' || needs.quality-backend.result == 'failure' }}
+        if: ${{ needs.quality-frontend.result == 'failure' || needs.quality-backend.result == 'failure' || needs.build.result == 'failure' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: sandbox.smtp.mailtrap.io
