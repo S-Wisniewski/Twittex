@@ -97,7 +97,7 @@ jobs:
 
   summary:
     name: Summary
-    needs: [quality-frontend, quality-backend, build]
+    needs: [quality-frontend, quality-backend, build, release]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -110,7 +110,7 @@ jobs:
 
   notify:
     name: Email Notification
-    needs: [quality-frontend, quality-backend, build]
+    needs: [quality-frontend, quality-backend, build, release]
     runs-on: ubuntu-latest
     if: always()
     steps:
