@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [main, e2e]
+  pull_request:
+    branches: [main, e2e]
+
+concurrency:
+  group: ci-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deps:
+    name: Install dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Cache npm
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('src/web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        working-directory: ./src/web
+        run: npm ci
+
+  audit:
+    name: Audit dependencies
+    needs: deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install deps (cache)
+        working-directory: ./src/web
+        run: npm ci
+
+      - name: Run npm audit
+        working-directory: ./src/web
+        run: npm audit --audit-level=moderate
+
+  lint:
+    name: Lint (ESLint)
+    needs: deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install deps (cache)
+        working-directory: ./src/web
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: ./src/web
+        run: npm run lint
+
+  typecheck:
+    name: Typecheck (tsc)
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install deps (cache)
+        working-directory: ./src/web
+        run: npm ci
+
+      - name: Run TypeScript typecheck
+        working-directory: ./src/web
+        run: npx tsc --noEmit
+
+  build:
+    name: Build
+    needs: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install deps (cache)
+        working-directory: ./src/web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./src/web
+        run: npm run build
+
+  deploy:
+    name: Deploy (main only)
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy placeholder
+        run: echo "Deploy step goes here (configure provider / secrets)"
