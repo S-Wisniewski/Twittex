@@ -82,6 +82,19 @@ jobs:
           name: twittex-build
           path: src/web/dist/
 
+
+  release:
+    name: Manual Approval
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+        - name: Release execution
+          run: |
+           echo "Approved for branch: ${{ github.ref_name }}"
+           echo "Environment in GitHub: ${{ github.ref_name == 'main' && 'production' || 'staging' }}"
+
+
   summary:
     name: Summary
     needs: [quality-frontend, quality-backend, build]
