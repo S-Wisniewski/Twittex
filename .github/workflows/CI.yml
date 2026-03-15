@@ -156,3 +156,4 @@ jobs:
             
             Sprawdź logi w GitHub Actions, aby zidentyfikować przyczynę błędu:
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
