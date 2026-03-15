@@ -57,7 +57,6 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - run: bun run build
-      
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         continue-on-error: true
@@ -69,10 +68,60 @@ jobs:
     name: Summary
     needs: build
     runs-on: ubuntu-latest
+    if: always()
     steps:
       - name: Generate Summary
         run: |
           echo "### Twittex CI Summary" >> $GITHUB_STEP_SUMMARY
-          echo "Frontend Quality: OK" >> $GITHUB_STEP_SUMMARY
-          echo "Backend Quality: OK" >> $GITHUB_STEP_SUMMARY
-          echo "Build Status: Success" >> $GITHUB_STEP_SUMMARY
+          echo "Frontend Quality: ${{ needs.quality-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "Backend Quality: ${{ needs.quality-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "Build Status: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Email Notification
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Send Success Mail
+        if: ${{ needs.build.result == 'success' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: sandbox.smtp.mailtrap.io
+          server_port: 2525
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "SUKCES: Projekt Twittex zbudowany pomyślnie"
+          to: stanislaw.wisniewski@student.uj.edu.pl
+          from: GitHub Actions Twittex
+          body: |
+            Świetne wieści! Wszystkie testy i proces budowania zakończyły się sukcesem.
+            
+            Repozytorium: ${{ github.repository }}
+            Gałąź: ${{ github.ref_name }}
+            Autor: ${{ github.actor }}
+            Commit: ${{ github.sha }}
+            
+            Aplikacja jest gotowa do wdrożenia.
+            Szczegóły akcji: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Send Failure Mail
+        if: ${{ needs.build.result == 'failure' || needs.quality-frontend.result == 'failure' || needs.quality-backend.result == 'failure' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: sandbox.smtp.mailtrap.io
+          server_port: 2525
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "BŁĄD: Pipeline projektu Twittex przerwany"
+          to: stanislaw.wisniewski@student.uj.edu.pl
+          from: GitHub Actions <ci@twittex.io>
+          body: |
+            Uwaga! Proces CI napotkał problemy i został przerwany.
+            
+            Projekt: ${{ github.repository }}
+            Gałąź: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            
+            Sprawdź logi w GitHub Actions, aby zidentyfikować przyczynę błędu:
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
