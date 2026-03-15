@@ -1,10 +1,6 @@
-name: TODO Manual Deployment
+name: Manual Deployment
 
 on:
-  push:
-    branches: [main, e2e]
-  pull_request:
-    branches: [main, e2e]
   workflow_dispatch:
     inputs:
       target_env:
@@ -16,116 +12,17 @@ on:
           - staging
           - production
       ecr_hash:
-        description: 'Hash obrazu z AWS ECR (np. latest lub SHA)'
+        description: 'Hash obrazu z AWS ECR'
         required: true
         type: string
 
-concurrency:
-  group: ci-${{ github.ref_name }}
-  cancel-in-progress: true
-
 jobs:
-  validate-secrets:
-    name: Validate Secrets
+  deploy:
+    name: Deploy to ${{ github.event.inputs.target_env }}
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target_env }}
     steps:
-      - name: Check required secrets
+      - name: Release Execution
         run: |
-          if [ -z "${{ secrets.MAIL_USERNAME }}" ] || [ -z "${{ secrets.MAIL_PASSWORD }}" ]; then
-            echo "Error: MAIL_USERNAME or MAIL_PASSWORD secret is not set."
-            exit 1
-          fi
-          echo "All required secrets are set."
-
-  quality-frontend:
-    name: Frontend Quality
-    needs: validate-secrets
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./src/web
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - run: bun install --frozen-lockfile
-      - run: bun run lint
-      - run: bun x tsc --noEmit
-      - run: bun audit
-
-  quality-backend:
-    name: Backend Quality
-    needs: validate-secrets
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: Install Ruff
-        run: pip install ruff
-      - name: Run Ruff
-        run: |
-          ruff check .
-          ruff format --check .
-
-  build:
-    name: Build
-    needs: [quality-frontend, quality-backend]
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./src/web
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-      - run: bun install --frozen-lockfile
-      - run: bun run build
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        with:
-          name: twittex-build
-          path: src/web/dist/
-
-  release:
-    name: Manual Approval
-    needs: build
-    runs-on: ubuntu-latest
-    # Jeśli odpalasz ręcznie, bierze input. Jeśli z automatu, wybiera po branchu.
-    environment: ${{ github.event.inputs.target_env || (github.ref_name == 'main' && 'production' || 'staging') }}
-    steps:
-      - name: Release execution
-        run: |
-          echo "Approved for branch: ${{ github.ref_name }}"
-          echo "Target Environment: ${{ github.event.inputs.target_env || 'auto-detected' }}"
-          echo "ECR Hash: ${{ github.event.inputs.ecr_hash || 'N/A (Auto Build)' }}"
-          echo "Final Environment in GitHub: ${{ github.event.inputs.target_env || (github.ref_name == 'main' && 'production' || 'staging') }}"
-
-  summary:
-    name: Summary
-    needs: [quality-frontend, quality-backend, build, release]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Generate Summary
-        run: |
-          echo "### Twittex Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Środowisko:** ${{ github.event.inputs.target_env || 'auto' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **ECR Hash:** ${{ github.event.inputs.ecr_hash || 'auto-build' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend Quality:** ${{ needs.quality-frontend.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend Quality:** ${{ needs.quality-backend.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Status:** ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
-
-  notify:
-    name: Email Notification
-    needs: [quality-frontend, quality-backend, build, release]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Send Mail
-        uses: dawidd6/action-send-
+          echo "Wdrażam na środowisko: ${{ github.event.inputs.target_env }}"
+          echo "Używam obrazu ECR o hashu: ${{ github.event.inputs.ecr_hash }}"
