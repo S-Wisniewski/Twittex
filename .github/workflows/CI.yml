@@ -10,32 +10,20 @@ concurrency:
   group: ci-${{ github.ref_name }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    working-directory: ./src/web
+
 jobs:
   deps:
     name: Install dependencies
     runs-on: ubuntu-latest
-    outputs:
-      cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-
-      - name: Cache npm
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('src/web/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install dependencies
-        working-directory: ./src/web
-        run: npm ci
+          bun-version: latest
+      - run: bun install --frozen-lockfile
 
   audit:
     name: Audit dependencies
@@ -43,19 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-
-      - name: Install deps (cache)
-        working-directory: ./src/web
-        run: npm ci
-
-      - name: Run npm audit
-        working-directory: ./src/web
-        run: npm audit --audit-level=moderate
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun audit
 
   lint:
     name: Lint (ESLint)
@@ -63,19 +43,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-
-      - name: Install deps (cache)
-        working-directory: ./src/web
-        run: npm ci
-
-      - name: Run ESLint
-        working-directory: ./src/web
-        run: npm run lint
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
 
   typecheck:
     name: Typecheck (tsc)
@@ -83,19 +55,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-
-      - name: Install deps (cache)
-        working-directory: ./src/web
-        run: npm ci
-
-      - name: Run TypeScript typecheck
-        working-directory: ./src/web
-        run: npx tsc --noEmit
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun x tsc --noEmit
 
   build:
     name: Build
@@ -103,19 +67,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "18"
-
-      - name: Install deps (cache)
-        working-directory: ./src/web
-        run: npm ci
-
-      - name: Build frontend
-        working-directory: ./src/web
-        run: npm run build
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
 
   deploy:
     name: Deploy (main only)
@@ -124,6 +80,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Deploy placeholder
-        run: echo "Deploy step goes here (configure provider / secrets)"
+      - run: echo "Deploy step goes here (configure provider / secrets)"
