@@ -4,6 +4,7 @@ namespace ModerationSystem.Api.Models.Entities
 {
     public class User
     {
+        [Key]
         [Required]
         public string CognitoUserId { get; set; } = string.Empty;
 
