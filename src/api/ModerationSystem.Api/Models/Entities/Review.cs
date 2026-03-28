@@ -3,10 +3,12 @@
     public class Review : BaseEntity
     {
         public int PostId { get; set; }
+
         public virtual Post Post { get; set; }
 
         // user who flagged the post
-        public int UserId { get; set; }
+        public string CognitoUserId { get; set; }
+
         public virtual User User { get; set; }
 
         // reason for flagging the post

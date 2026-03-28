@@ -35,16 +35,16 @@ public class AppDbContext : DbContext
 
             entity.HasOne(p => p.User)
                 .WithMany(u => u.Posts)
-                .HasForeignKey(p => p.UserId);
+                .HasForeignKey(p => p.CognitoUserId);
         });
 
         modelBuilder.Entity<PostLikes>(entity =>
         {
-            entity.HasKey(pl => new { pl.UserId, pl.PostId });
+            entity.HasKey(pl => new { pl.CognitoUserId, pl.PostId });
 
             entity.HasOne(pl => pl.User)
                 .WithMany(u => u.LikedPosts)
-                .HasForeignKey(pl => pl.UserId)
+                .HasForeignKey(pl => pl.CognitoUserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(pl => pl.Post)
@@ -77,7 +77,7 @@ public class AppDbContext : DbContext
 
             entity.HasOne(r => r.User)
                 .WithMany()
-                .HasForeignKey(r => r.UserId)
+                .HasForeignKey(r => r.CognitoUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
