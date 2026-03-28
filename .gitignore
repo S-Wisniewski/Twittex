@@ -32,6 +32,11 @@ wheels/
 .installed.cfg
 *.egg
 
+bin/
+obj/
+.vs/
+*.user
+
 # --- Node / React (Frontend) ---
 node_modules/
 dist/
