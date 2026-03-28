@@ -2,7 +2,9 @@
 
 public class Log : BaseEntity
 {
-    public string UserId { get; set; }
+    public string CognitoUserId { get; set; }
+
+    public User User { get; set; }
 
     public string Content { get; set; }
 }
