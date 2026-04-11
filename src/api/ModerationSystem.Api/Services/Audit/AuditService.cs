@@ -1,26 +1,28 @@
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Entities;
 
-namespace ModerationSystem.Api.Services.Audit;
-
-public class AuditService : IAuditService
+namespace ModerationSystem.Api.Services.Audit
 {
-    private readonly AppDbContext _db;
-
-    public AuditService(AppDbContext db)
+    public class AuditService : IAuditService
     {
-        _db = db;
-    }
+        private readonly AppDbContext _db;
 
-    public async Task LogAsync(string cognitoUserId, string content)
-    {
-        var log = new Log
+        public AuditService(AppDbContext db)
         {
-            CognitoUserId = cognitoUserId,
-            Content = content
-        };
+            _db = db;
+        }
 
-        await _db.AddAsync(log);
-        await _db.SaveChangesAsync();
+        public async Task LogAsync(string cognitoUserId, string content)
+        {
+            var log = new Log
+            {
+                CognitoUserId = cognitoUserId,
+                Content = content
+            };
+
+            await _db.AddAsync(log);
+            await _db.SaveChangesAsync();
+        }
     }
 }
+

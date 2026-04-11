@@ -1,6 +1,8 @@
-namespace ModerationSystem.Api.Services.Audit;
-
-public interface IAuditService
+namespace ModerationSystem.Api.Services.Audit
 {
-    Task LogAsync(string cognitoUserId, string content);
+    public interface IAuditService
+    {
+        Task LogAsync(string cognitoUserId, string content);
+    }
 }
+
