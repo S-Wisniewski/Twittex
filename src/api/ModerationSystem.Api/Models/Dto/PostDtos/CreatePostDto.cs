@@ -2,8 +2,8 @@
 {
     public class CreatePostDto
     {
-        public string CognitoUserId { get; set; }
+        public string CognitoUserId { get; set; } = null!;
         public int? ParentPostId { get; set; }
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty;
     }
 }
