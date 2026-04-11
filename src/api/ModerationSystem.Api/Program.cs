@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
 using Scalar.AspNetCore;
+using ModerationSystem.Api.Services.Audit;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
