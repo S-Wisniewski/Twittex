@@ -1,7 +1,7 @@
 ﻿using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Models.Enums;
 
-namespace ModerationSystem.Api.Interfaces
+namespace ModerationSystem.Api.Services.Posts
 {
     public interface IPostService
     {

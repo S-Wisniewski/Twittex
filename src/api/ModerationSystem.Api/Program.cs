@@ -1,12 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
-using ModerationSystem.Api.Interfaces;
-using ModerationSystem.Api.Services;
 using Scalar.AspNetCore;
 using ModerationSystem.Api.Services.Audit;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using ModerationSystem.Api.Services.Posts;
 
 var rootPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../"));
 var envPath = Path.Combine(rootPath, ".env");
