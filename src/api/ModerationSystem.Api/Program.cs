@@ -7,6 +7,7 @@ using ModerationSystem.Api.Services.Audit;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using ModerationSystem.Api.Mappings;
 
 var rootPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../"));
 var envPath = Path.Combine(rootPath, ".env");
@@ -52,6 +53,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Add services to the container.
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IPostService, PostService>();
+
+builder.Services.AddAutoMapper(
+    cfg => { },
+    typeof(MappingProfile).Assembly
+);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
