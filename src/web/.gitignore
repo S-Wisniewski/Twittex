@@ -28,3 +28,5 @@ terraform.tfvars
 *.tfstate
 *.tfstate.backup
 .terraform/
+
+.secrets
