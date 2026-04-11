@@ -2,12 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using ModerationSystem.Api.Data;
-using ModerationSystem.Api.Interfaces;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Models.Entities;
 using ModerationSystem.Api.Models.Enums;
 
-namespace ModerationSystem.Api.Services
+namespace ModerationSystem.Api.Services.Posts
 {
     public class PostService : IPostService
     {
