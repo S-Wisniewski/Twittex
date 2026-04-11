@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using ModerationSystem.Api.Data;
@@ -13,9 +14,10 @@ namespace ModerationSystem.Api.Services.Posts
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
 
-        public PostService(AppDbContext context)
+        public PostService(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public Task<bool> ChangePostStatusAsync(int id, PostStatus newStatus)
@@ -45,7 +47,7 @@ namespace ModerationSystem.Api.Services.Posts
         public async Task<IEnumerable<PostDto>> GetAllPostsAsync()
         {
             var posts = await _context.Posts.ToListAsync();
-                
+
             return _mapper.Map<IEnumerable<PostDto>>(posts);
         }
 
