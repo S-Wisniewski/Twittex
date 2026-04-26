@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ModerationSystem.Api.Interfaces;
 using ModerationSystem.Api.Models.Dto.PostDtos;
+using ModerationSystem.Api.Services.Posts;
 
 namespace ModerationSystem.Api.Controllers
 {
