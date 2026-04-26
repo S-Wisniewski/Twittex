@@ -1,27 +1,34 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using ModerationSystem.Api.Data;
-using ModerationSystem.Api.Interfaces;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Models.Entities;
 using ModerationSystem.Api.Models.Enums;
+using ModerationSystem.Api.Services.Audit;
+using ModerationSystem.Api.Services.Notifications;
 
-namespace ModerationSystem.Api.Services
+namespace ModerationSystem.Api.Services.Posts
 {
     public class PostService : IPostService
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IAuditService _auditService;
+        private readonly NotificationService _notifications;
 
-        public PostService(AppDbContext context, IMapper mapper)
+        public PostService(
+            AppDbContext context,
+            IMapper mapper,
+            IAuditService auditService,
+            NotificationService notifications)
         {
             _context = context;
             _mapper = mapper;
+            _auditService = auditService;
+            _notifications = notifications;
         }
 
-        public Task<bool> ChangePostStatusAsync(int id, PostStatus newStatus)
+        public async Task<bool> ChangePostStatusAsync(int id, PostStatus newStatus)
         {
             throw new NotImplementedException();
         }
@@ -29,19 +36,30 @@ namespace ModerationSystem.Api.Services
         public async Task<PostDto> CreatePostAsync(CreatePostDto dto)
         {
             var post = _mapper.Map<Post>(dto);
-            post.Status = PostStatus.Pending; // New posts start as pending
+            post.Status = PostStatus.Pending;
 
-            var createdPost = _context.Posts.Add(post).Entity;
-            return _mapper.Map<PostDto>(createdPost);
+            _context.Posts.Add(post);
+
+            _auditService.AddLog(post.CognitoUserId, $"Post created: {post.Content}");
+
+            await _context.SaveChangesAsync();
+
+            await _notifications.NotifyModeratorsOfPendingPost(post);
+
+            return _mapper.Map<PostDto>(post);
         }
 
         public async Task<bool> DeletePostAsync(int id)
         {
             var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
-            if (post == null) return false;
+            if (post == null || post.DeletedAt != null) return false;
 
-            _context.Posts.Remove(post);
+            post.DeletedAt = DateTime.UtcNow;
+
+            _auditService.AddLog(post.CognitoUserId, $"Post deleted: {post.Content}");
+
             await _context.SaveChangesAsync();
+
             return true;
         }
 
@@ -65,14 +83,19 @@ namespace ModerationSystem.Api.Services
 
         public async Task<bool> UpdatePostAsync(int id, UpdatePostDto dto)
         {
-            var post = _context.Posts.FirstOrDefault(p => p.Id == id);
+            var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
             if (post == null) return false;
 
             post.Content = dto.Content;
-            post.Status = PostStatus.Pending; // Reset status to pending for re-review
+            post.Status = PostStatus.Pending;
+            post.UpdatedAt = DateTime.UtcNow;
 
-            _context.Posts.Update(post);
+            _auditService.AddLog(post.CognitoUserId, $"Post updated: {post.Content}");
+
             await _context.SaveChangesAsync();
+
+            await _notifications.NotifyModeratorsOfPendingPost(post);
+
             return true;
         }
     }
