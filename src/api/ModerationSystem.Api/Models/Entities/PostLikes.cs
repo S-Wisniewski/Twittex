@@ -7,12 +7,12 @@ namespace ModerationSystem.Api.Models.Entities
         [Required]
         public string CognitoUserId { get; set; } = null!;
 
-        public virtual User User { get; set; } = null!;
+        public User User { get; set; } = null!;
 
         [Required]
         public int PostId { get; set; }
 
-        public virtual Post Post { get; set; } = null!;
+        public Post Post { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
