@@ -7,14 +7,12 @@ namespace ModerationSystem.Api.Models.Entities
     {
         [Required]
         public int PostId { get; set; }
-
-        public virtual Post Post { get; set; } = null!;
+        public virtual Post Post { get; set; }
 
         // user who flagged the post
         [Required]
-        public string CognitoUserId { get; set; } = null!;
-
-        public virtual User User { get; set; } = null!;
+        public string CognitoUserId { get; set; }
+        public virtual User User { get; set; }
 
         // reason for flagging the post
         public string? Description { get; set; }
