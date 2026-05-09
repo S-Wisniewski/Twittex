@@ -8,12 +8,6 @@ namespace ModerationSystem.Api.Mappings
     {
         public MappingProfile()
         {
-            #region Post Mappings
-                CreateMap<Post, PostDto>()
-                    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
-                CreateMap<CreatePostDto, Post>();
-                CreateMap<UpdatePostDto, Post>();
-            #endregion
         }
     }
 }

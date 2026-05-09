@@ -7,12 +7,12 @@ namespace ModerationSystem.Api.Models.Entities
         [Required]
         public string FollowerId { get; set; } = null!;
 
-        public virtual User Follower { get; set; } = null!;
+        public User Follower { get; set; } = null!;
 
         [Required]
         public string FollowedId { get; set; } = null!;
 
-        public virtual User Followed { get; set; } = null!;
+        public User Followed { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

@@ -1,0 +1,72 @@
+UserController ('/users')
+- GET:/${userId} getUser() -> UserResponse
+- GET:/search?q=... searchUser() -> UserResponse[]
+- PATCH:/${id} updateUser(body: {displayName?: string, userName?: string, bio?: string}) -> UserResponse
+- POST:/${userId}/follow followUser() -> void // follow/unfollow
+- DELETE:/${userId} deleteUser() -> void
+
+UserResponse = {
+  id: string;
+  userName: string;
+  userId: string;
+  createdAt: string;
+  content: string;
+  userAvatarUrl: string;
+  isLiked: boolean;
+  following: number;
+  followers: number;
+  youFollow: boolean;
+}
+
+PostsController ('/posts')
+- GET:/ getFeed() -> PostResponse[]
+- GET:/${postId} getById() -> PostResponse
+- GET:/api/users/${userId}/posts getUsersPosts() -> PostResponse[]
+- POST:/ createPost(body: {content: string, parentPostId?: string}) -> PostResponse
+- GET:/${id}/logs getLogs() -> PostLogResponse[]
+- POST:/${id}/likes likePost() -> void
+- DELETE:/${id}/likes likePost() -> void
+- POST:/${id}/reviews postReview(body: {eviewType: ReviewType, description?: string}) -> ReviewResponse
+- GET:/${id}/reviews getReviews() -> ReviewResponse[]
+
+PostResponse = {
+  id: string;
+  userName: string;
+  userId: string;
+  createdAt: string;
+  content: string;
+  userAvatarUrl: string;
+  isLiked: boolean;
+  status: PostStatus;
+  likeCount: number;
+  commentCount: number;
+}
+
+PostLogResponse = {
+  id: string;
+  oldStatus: PostStatus;
+  newStatus: PostStatus;
+  reason: string;
+  triggeredBy: "llm" | "moderator" | "community" | "system";
+  createdAt: string;
+}
+
+ReviewType =
+  | "InappropriateContent"
+  | "Spam"
+  | "Harassment"
+  | "HateSpeech"
+  | "Misinformation"
+  | "Other";
+
+AuthController ('/auth')
+- POST:/log-in logIn(body: {username: string, password: string}) -> TokenResponse
+- POST:/log-out logOut() -> void
+- GET:/refresh-token getRefreshToken() -> TokenResponse
+
+TokenResponse = {
+  accessToken: string
+  idToken: string // idk maybe smth from cognito
+  refreshToken: string
+  expiresIn: number
+}
