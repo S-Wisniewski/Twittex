@@ -34,12 +34,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = builder.Configuration["Cognito:Authority"];
-        options.Audience = builder.Configuration["Cognito:Audience"];
-
+        options.MapInboundClaims = false; // Prevents mapping 'sub' to long XML schema name
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidIssuer = builder.Configuration["Cognito:Authority"],
+            ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(2)
@@ -47,7 +47,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         options.Events = new JwtBearerEvents
         {
-            OnAuthenticationFailed = context => Task.CompletedTask
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"\n[Auth Failed] {context.Exception.Message}\n");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                // Cognito puts the user ID in the 'sub' claim
+                // By default ASP.NET maps this to NameIdentifier
+                Console.WriteLine("\n[Auth Success] Token validated.\n");
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -73,6 +84,27 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 );
 
 var app = builder.Build();
+
+// Diagnostic Middleware: Log every request and its Auth status
+app.Use(async (context, next) =>
+{
+    var authHeader = context.Request.Headers["Authorization"].ToString();
+    Console.WriteLine($"\n>>> [Incoming Request] {context.Request.Method} {context.Request.Path}");
+    
+    if (string.IsNullOrEmpty(authHeader))
+    {
+        Console.WriteLine(">>> [Auth] No Authorization header found.");
+    }
+    else
+    {
+        var preview = authHeader.Length > 25 ? authHeader.Substring(0, 25) : authHeader;
+        Console.WriteLine($">>> [Auth] Header found: {preview}...");
+    }
+
+    await next();
+
+    Console.WriteLine($">>> [Response] Status: {context.Response.StatusCode}\n");
+});
 
 // Seed the database
 using (var scope = app.Services.CreateScope())
