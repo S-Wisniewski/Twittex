@@ -28,7 +28,7 @@ namespace ModerationSystem.Api.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.HasOne(p => p.ParentPost)
-                    .WithMany()
+                    .WithMany(p => p.Replies)
                     .HasForeignKey(p => p.ParentPostId)
                     .OnDelete(DeleteBehavior.Restrict);
 

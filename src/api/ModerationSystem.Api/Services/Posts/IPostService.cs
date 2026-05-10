@@ -4,7 +4,7 @@ namespace ModerationSystem.Api.Services.Posts
 {
     public interface IPostService
     {
-        Task<IEnumerable<PostResponse>> GetFeedAsync(string? currentUserId = null);
+        Task<IEnumerable<PostResponse>> GetFeedAsync(int pageNumber = 1, int pageSize = 10, string? currentUserId = null);
         Task<PostResponse?> GetByIdAsync(int postId, string? currentUserId = null);
         Task<IEnumerable<PostResponse>> GetUsersPostsAsync(string userId, string? currentUserId = null);
         Task<PostResponse> CreatePostAsync(CreatePostRequest request, string userId);

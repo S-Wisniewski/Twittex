@@ -1,4 +1,5 @@
 UserController ('/users')
+- GET:/ getAll() -> UserResponse[]
 - GET:/${userId} getUser() -> UserResponse
 - GET:/search?q=... searchUser() -> UserResponse[]
 - PATCH:/${id} updateUser(body: {displayName?: string, userName?: string, bio?: string}) -> UserResponse
@@ -19,7 +20,7 @@ UserResponse = {
 }
 
 PostsController ('/posts')
-- GET:/ getFeed() -> PostResponse[]
+- GET:/?page=1&pageSize=10 getFeed() -> PostResponse[]
 - GET:/${postId} getById() -> PostResponse
 - GET:/api/users/${userId}/posts getUsersPosts() -> PostResponse[]
 - POST:/ createPost(body: {content: string, parentPostId?: string}) -> PostResponse

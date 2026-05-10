@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.PostDtos;
@@ -9,19 +10,24 @@ namespace ModerationSystem.Api.Services.Posts
     public class PostService : IPostService
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public PostService(AppDbContext context)
+        public PostService(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        public async Task<IEnumerable<PostResponse>> GetFeedAsync(string? currentUserId = null)
+        public async Task<IEnumerable<PostResponse>> GetFeedAsync(int pageNumber = 1, int pageSize = 10, string? currentUserId = null)
         {
             var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Reviews)
+                .Include(p => p.Replies)
                 .OrderByDescending(p => p.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             return posts.Select(p => MapToPostResponse(p, currentUserId));
@@ -33,6 +39,7 @@ namespace ModerationSystem.Api.Services.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Reviews)
+                .Include(p => p.Replies)
                 .FirstOrDefaultAsync(p => p.Id == postId);
 
             if (post == null) return null;
@@ -45,6 +52,7 @@ namespace ModerationSystem.Api.Services.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Reviews)
+                .Include(p => p.Replies)
                 .Where(p => p.CognitoUserId == userId)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
@@ -56,23 +64,6 @@ namespace ModerationSystem.Api.Services.Posts
         {
             // Handle ParentPostId being 0 (which some frontends might send instead of null)
             int? parentPostId = request.ParentPostId == 0 ? null : request.ParentPostId;
-
-            // Ensure the user exists in our database
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.CognitoUserId == userId);
-            if (user == null)
-            {
-                // For development: auto-create mock user if it doesn't exist
-                user = new User
-                {
-                    CognitoUserId = userId,
-                    UserName = userId == "mocked-current-user-id" ? "TestUser" : userId,
-                    DisplayName = userId == "mocked-current-user-id" ? "Test User" : userId,
-                    Bio = "I am a test user.",
-                    CreatedAt = DateTime.UtcNow
-                };
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-            }
 
             var post = new Post
             {
@@ -87,6 +78,7 @@ namespace ModerationSystem.Api.Services.Posts
 
             await _context.Entry(post).Reference(p => p.User).LoadAsync();
             await _context.Entry(post).Collection(p => p.Likes).LoadAsync();
+            await _context.Entry(post).Collection(p => p.Replies).LoadAsync();
 
             return MapToPostResponse(post, userId);
         }
@@ -98,15 +90,7 @@ namespace ModerationSystem.Api.Services.Posts
                 .OrderByDescending(l => l.CreatedAt)
                 .ToListAsync();
 
-            return logs.Select(l => new PostLogResponse
-            {
-                Id = l.Id.ToString(),
-                OldStatus = l.OldStatus,
-                NewStatus = l.NewStatus,
-                Reason = l.Reason,
-                TriggeredBy = l.TriggeredBy,
-                CreatedAt = l.CreatedAt
-            });
+            return _mapper.Map<IEnumerable<PostLogResponse>>(logs);
         }
 
         public async Task<bool> LikePostAsync(int postId, string userId)
@@ -157,15 +141,7 @@ namespace ModerationSystem.Api.Services.Posts
             _context.Set<Review>().Add(review);
             await _context.SaveChangesAsync();
 
-            return new ReviewResponse
-            {
-                Id = review.Id.ToString(),
-                PostId = review.PostId,
-                CognitoUserId = review.CognitoUserId,
-                Description = review.Description,
-                ReviewType = review.ReviewType,
-                CreatedAt = review.CreatedAt
-            };
+            return _mapper.Map<ReviewResponse>(review);
         }
 
         public async Task<IEnumerable<ReviewResponse>> GetReviewsAsync(int postId)
@@ -174,33 +150,14 @@ namespace ModerationSystem.Api.Services.Posts
                 .Where(r => r.PostId == postId)
                 .ToListAsync();
 
-            return reviews.Select(r => new ReviewResponse
-            {
-                Id = r.Id.ToString(),
-                PostId = r.PostId,
-                CognitoUserId = r.CognitoUserId,
-                Description = r.Description,
-                ReviewType = r.ReviewType,
-                CreatedAt = r.CreatedAt
-            });
+            return _mapper.Map<IEnumerable<ReviewResponse>>(reviews);
         }
 
         private PostResponse MapToPostResponse(Post post, string? currentUserId)
         {
-            return new PostResponse
-            {
-                Id = post.Id.ToString(),
-                UserName = post.User?.UserName ?? string.Empty,
-                UserId = post.CognitoUserId,
-                CreatedAt = post.CreatedAt,
-                Content = post.Content,
-                UserAvatarUrl = post.User?.AvatarUrl ?? string.Empty,
-                IsLiked = currentUserId != null && post.Likes.Any(l => l.CognitoUserId == currentUserId),
-                Status = post.Status,
-                ParentPostId = post.ParentPostId,
-                LikeCount = post.Likes.Count,
-                CommentCount = 0 // Needs proper implementation with replies/comments if applicable
-            };
+            var response = _mapper.Map<PostResponse>(post);
+            response.IsLiked = currentUserId != null && post.Likes.Any(l => l.CognitoUserId == currentUserId);
+            return response;
         }
     }
 }

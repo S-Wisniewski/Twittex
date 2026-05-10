@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.UserDtos;
@@ -8,10 +9,22 @@ namespace ModerationSystem.Api.Services.Users
     public class UserService : IUserService
     {
         private readonly AppDbContext _context;
+        private readonly IMapper _mapper;
 
-        public UserService(AppDbContext context)
+        public UserService(AppDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
+        }
+
+        public async Task<IEnumerable<UserResponse>> GetAllUsersAsync(string? currentUserId = null)
+        {
+            var users = await _context.Users
+                .Include(u => u.Followers)
+                .Include(u => u.Following)
+                .ToListAsync();
+
+            return users.Select(u => MapToResponse(u, currentUserId));
         }
 
         public async Task<UserResponse?> GetUserAsync(string userId, string? currentUserId = null)
@@ -98,19 +111,9 @@ namespace ModerationSystem.Api.Services.Users
 
         private UserResponse MapToResponse(User user, string? currentUserId)
         {
-            return new UserResponse
-            {
-                Id = user.CognitoUserId,
-                UserId = user.CognitoUserId,
-                UserName = user.UserName,
-                CreatedAt = user.CreatedAt,
-                Content = user.Bio ?? string.Empty,
-                UserAvatarUrl = user.AvatarUrl ?? string.Empty,
-                IsLiked = false, // As per requirements, doesn't make much sense for user
-                Followers = user.Followers.Count,
-                Following = user.Following.Count,
-                YouFollow = currentUserId != null && user.Followers.Any(f => f.FollowerId == currentUserId)
-            };
+            var response = _mapper.Map<UserResponse>(user);
+            response.YouFollow = currentUserId != null && user.Followers.Any(f => f.FollowerId == currentUserId);
+            return response;
         }
     }
 }

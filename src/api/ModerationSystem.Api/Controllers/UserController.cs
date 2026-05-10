@@ -15,6 +15,14 @@ namespace ModerationSystem.Api.Controllers
             _userService = userService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            string? currentUserId = null;
+            var users = await _userService.GetAllUsersAsync(currentUserId);
+            return Ok(users);
+        }
+
         [HttpGet("{userId}")]
         public async Task<IActionResult> GetUser(string userId)
         {
