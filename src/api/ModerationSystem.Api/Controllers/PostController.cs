@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Services.Posts;
+using System.Security.Claims;
 
 namespace ModerationSystem.Api.Controllers
 {
     [ApiController]
     [Route("api/posts")]
+    [Authorize]
     public class PostsController : ControllerBase
     {
         private readonly IPostService _postService;
@@ -15,19 +18,22 @@ namespace ModerationSystem.Api.Controllers
             _postService = postService;
         }
 
+        private string? GetCurrentUserId() => User.FindFirst("sub")?.Value;
+
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetFeed([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            // Mocking current user since auth is not implemented yet
-            string? currentUserId = "mocked-current-user-id";
+            string? currentUserId = GetCurrentUserId();
             var posts = await _postService.GetFeedAsync(page, pageSize, currentUserId);
             return Ok(posts);
         }
 
         [HttpGet("{postId}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(int postId)
         {
-            string? currentUserId = "mocked-current-user-id";
+            string? currentUserId = GetCurrentUserId();
             var post = await _postService.GetByIdAsync(postId, currentUserId);
             if (post == null) return NotFound();
 
@@ -35,9 +41,10 @@ namespace ModerationSystem.Api.Controllers
         }
 
         [HttpGet("~/api/users/{userId}/posts")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetUsersPosts(string userId)
         {
-            string? currentUserId = "mocked-current-user-id";
+            string? currentUserId = GetCurrentUserId();
             var posts = await _postService.GetUsersPostsAsync(userId, currentUserId);
             return Ok(posts);
         }
@@ -47,7 +54,9 @@ namespace ModerationSystem.Api.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            string currentUserId = "mocked-current-user-id"; // From auth context
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
             var createdPost = await _postService.CreatePostAsync(request, currentUserId);
             return CreatedAtAction(nameof(GetById), new { postId = int.Parse(createdPost.Id) }, createdPost);
         }
@@ -62,7 +71,9 @@ namespace ModerationSystem.Api.Controllers
         [HttpPost("{id}/likes")]
         public async Task<IActionResult> LikePost(int id)
         {
-            string currentUserId = "mocked-current-user-id";
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
             var success = await _postService.LikePostAsync(id, currentUserId);
             if (!success) return NotFound();
 
@@ -70,9 +81,11 @@ namespace ModerationSystem.Api.Controllers
         }
 
         [HttpDelete("{id}/likes")]
-        public async Task<IActionResult> UnlikePost(int id) // Named unlikePost as it makes more sense for DELETE
+        public async Task<IActionResult> UnlikePost(int id)
         {
-            string currentUserId = "mocked-current-user-id";
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
             var success = await _postService.UnlikePostAsync(id, currentUserId);
             if (!success) return NotFound();
 
@@ -82,7 +95,9 @@ namespace ModerationSystem.Api.Controllers
         [HttpPost("{id}/reviews")]
         public async Task<IActionResult> PostReview(int id, [FromBody] PostReviewRequest request)
         {
-            string currentUserId = "mocked-current-user-id";
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
             var review = await _postService.PostReviewAsync(id, currentUserId, request);
             return CreatedAtAction(nameof(GetReviews), new { id = id }, review);
         }
