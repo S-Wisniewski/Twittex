@@ -1,16 +1,17 @@
-﻿using ModerationSystem.Api.Models.Dto.PostDtos;
-using ModerationSystem.Api.Models.Enums;
+using ModerationSystem.Api.Models.Dto.PostDtos;
 
 namespace ModerationSystem.Api.Services.Posts
 {
     public interface IPostService
     {
-        Task<PostDto?> GetPostByIdAsync(int id);
-        Task<IEnumerable<PostDto>> GetAllPostsAsync();
-        Task<IEnumerable<PostDto>> GetPostsByStatusAsync(PostStatus status);
-        Task<PostDto> CreatePostAsync(CreatePostDto dto);
-        Task<bool> UpdatePostAsync(int id, UpdatePostDto dto);
-        Task<bool> DeletePostAsync(int id);
-        Task<bool> ChangePostStatusAsync(int id, PostStatus newStatus);
+        Task<IEnumerable<PostResponse>> GetFeedAsync(int pageNumber = 1, int pageSize = 10, string? currentUserId = null);
+        Task<PostResponse?> GetByIdAsync(int postId, string? currentUserId = null);
+        Task<IEnumerable<PostResponse>> GetUsersPostsAsync(string userId, string? currentUserId = null);
+        Task<PostResponse> CreatePostAsync(CreatePostRequest request, string userId);
+        Task<IEnumerable<PostLogResponse>> GetLogsAsync(int postId);
+        Task<bool> LikePostAsync(int postId, string userId);
+        Task<bool> UnlikePostAsync(int postId, string userId);
+        Task<ReviewResponse> PostReviewAsync(int postId, string userId, PostReviewRequest request);
+        Task<IEnumerable<ReviewResponse>> GetReviewsAsync(int postId);
     }
 }

@@ -24,9 +24,37 @@ namespace ModerationSystem.Api.Extensions
                 app.UseHsts();
             }
 
-            app.UseGlobalExceptionHandling();
+            app.UseHttpsRedirection();
+
+            // Diagnostic Middleware
+            app.Use(async (context, next) =>
+            {
+                var authHeader = context.Request.Headers["Authorization"].ToString();
+
+                Console.WriteLine(
+                    $"\n>>> [Incoming Request] {context.Request.Method} {context.Request.Path}");
+
+                if (string.IsNullOrEmpty(authHeader))
+                {
+                    Console.WriteLine(">>> [Auth] No Authorization header found.");
+                }
+                else
+                {
+                    var preview = authHeader.Length > 25
+                        ? authHeader[..25]
+                        : authHeader;
+
+                    Console.WriteLine($">>> [Auth] Header found: {preview}...");
+                }
+
+                await next();
+
+                Console.WriteLine(
+                    $">>> [Response] Status: {context.Response.StatusCode}\n");
+            });
 
             app.UseCors();
+            app.UseGlobalExceptionHandling();
 
             app.UseAuthentication();
             app.UseAuthorization();

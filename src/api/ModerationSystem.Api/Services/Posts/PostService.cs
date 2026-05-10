@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.PostDtos;
@@ -14,89 +14,166 @@ namespace ModerationSystem.Api.Services.Posts
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly IAuditService _auditService;
-        private readonly NotificationService _notifications;
+        private readonly NotificationService _notificationsService;
 
         public PostService(
             AppDbContext context,
             IMapper mapper,
             IAuditService auditService,
-            NotificationService notifications)
+            NotificationService notificationsService)
         {
             _context = context;
             _mapper = mapper;
             _auditService = auditService;
-            _notifications = notifications;
+            _notificationsService = notificationsService;
         }
 
-        public async Task<bool> ChangePostStatusAsync(int id, PostStatus newStatus)
+        public async Task<IEnumerable<PostResponse>> GetFeedAsync(int pageNumber = 1, int pageSize = 10, string? currentUserId = null)
         {
-            throw new NotImplementedException();
+            var posts = await _context.Posts
+                .Include(p => p.User)
+                .Include(p => p.Likes)
+                .Include(p => p.Reviews)
+                .Include(p => p.Replies)
+                .OrderByDescending(p => p.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return posts.Select(p => MapToPostResponse(p, currentUserId));
         }
 
-        public async Task<PostDto> CreatePostAsync(CreatePostDto dto)
+        public async Task<PostResponse?> GetByIdAsync(int postId, string? currentUserId = null)
         {
-            var post = _mapper.Map<Post>(dto);
-            post.Status = PostStatus.Pending;
+            var post = await _context.Posts
+                .Include(p => p.User)
+                .Include(p => p.Likes)
+                .Include(p => p.Reviews)
+                .Include(p => p.Replies)
+                .FirstOrDefaultAsync(p => p.Id == postId);
+
+            if (post == null) return null;
+            return MapToPostResponse(post, currentUserId);
+        }
+
+        public async Task<IEnumerable<PostResponse>> GetUsersPostsAsync(string userId, string? currentUserId = null)
+        {
+            var posts = await _context.Posts
+                .Include(p => p.User)
+                .Include(p => p.Likes)
+                .Include(p => p.Reviews)
+                .Include(p => p.Replies)
+                .Where(p => p.CognitoUserId == userId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            return posts.Select(p => MapToPostResponse(p, currentUserId));
+        }
+
+        public async Task<PostResponse> CreatePostAsync(CreatePostRequest request, string userId)
+        {
+            // Handle ParentPostId being 0 (which some frontends might send instead of null)
+            int? parentPostId = request.ParentPostId == 0 ? null : request.ParentPostId;
+
+            var post = new Post
+            {
+                CognitoUserId = userId,
+                Content = request.Content,
+                ParentPostId = parentPostId,
+                Status = PostStatus.Pending
+            };
 
             _context.Posts.Add(post);
-
-            _auditService.AddLog(post.CognitoUserId, $"Post created: {post.Content}");
-
-            await _context.SaveChangesAsync();
-
-            await _notifications.NotifyModeratorsOfPendingPost(post);
-
-            return _mapper.Map<PostDto>(post);
-        }
-
-        public async Task<bool> DeletePostAsync(int id)
-        {
-            var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
-            if (post == null || post.DeletedAt != null) return false;
-
-            post.DeletedAt = DateTime.UtcNow;
-
-            _auditService.AddLog(post.CognitoUserId, $"Post deleted: {post.Content}");
+            _auditService.AddLog(
+               userId,
+               $"Post created: {request.Content.Substring(0, Math.Min(50, request.Content.Length))}..."
+           );
 
             await _context.SaveChangesAsync();
+            await _notificationsService.NotifyModeratorsOfPendingPost(post);
 
-            return true;
+            await _context.Entry(post).Reference(p => p.User).LoadAsync();
+            await _context.Entry(post).Collection(p => p.Likes).LoadAsync();
+            await _context.Entry(post).Collection(p => p.Replies).LoadAsync();
+
+            return MapToPostResponse(post, userId);
         }
 
-        public async Task<IEnumerable<PostDto>> GetAllPostsAsync()
+        public async Task<IEnumerable<PostLogResponse>> GetLogsAsync(int postId)
         {
-            var posts = await _context.Posts.ToListAsync();
+            var logs = await _context.Set<Log>()
+                .Where(l => l.PostId == postId)
+                .OrderByDescending(l => l.CreatedAt)
+                .ToListAsync();
 
-            return _mapper.Map<IEnumerable<PostDto>>(posts);
+            return _mapper.Map<IEnumerable<PostLogResponse>>(logs);
         }
 
-        public async Task<PostDto?> GetPostByIdAsync(int id)
+        public async Task<bool> LikePostAsync(int postId, string userId)
         {
-            var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
-            return _mapper.Map<PostDto?>(post);
-        }
-
-        public Task<IEnumerable<PostDto>> GetPostsByStatusAsync(PostStatus status)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<bool> UpdatePostAsync(int id, UpdatePostDto dto)
-        {
-            var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == id);
+            var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == postId);
             if (post == null) return false;
 
-            post.Content = dto.Content;
-            post.Status = PostStatus.Pending;
-            post.UpdatedAt = DateTime.UtcNow;
+            var existingLike = await _context.Set<PostLikes>()
+                .FirstOrDefaultAsync(l => l.PostId == postId && l.CognitoUserId == userId);
 
-            _auditService.AddLog(post.CognitoUserId, $"Post updated: {post.Content}");
-
-            await _context.SaveChangesAsync();
-
-            await _notifications.NotifyModeratorsOfPendingPost(post);
+            if (existingLike == null)
+            {
+                _context.Set<PostLikes>().Add(new PostLikes
+                {
+                    PostId = postId,
+                    CognitoUserId = userId
+                });
+                await _context.SaveChangesAsync();
+            }
 
             return true;
+        }
+
+        public async Task<bool> UnlikePostAsync(int postId, string userId)
+        {
+            var existingLike = await _context.Set<PostLikes>()
+                .FirstOrDefaultAsync(l => l.PostId == postId && l.CognitoUserId == userId);
+
+            if (existingLike != null)
+            {
+                _context.Set<PostLikes>().Remove(existingLike);
+                await _context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+
+        public async Task<ReviewResponse> PostReviewAsync(int postId, string userId, PostReviewRequest request)
+        {
+            var review = new Review
+            {
+                PostId = postId,
+                CognitoUserId = userId,
+                ReviewType = request.ReviewType,
+                Description = request.Description
+            };
+
+            _context.Set<Review>().Add(review);
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<ReviewResponse>(review);
+        }
+
+        public async Task<IEnumerable<ReviewResponse>> GetReviewsAsync(int postId)
+        {
+            var reviews = await _context.Set<Review>()
+                .Where(r => r.PostId == postId)
+                .ToListAsync();
+
+            return _mapper.Map<IEnumerable<ReviewResponse>>(reviews);
+        }
+
+        private PostResponse MapToPostResponse(Post post, string? currentUserId)
+        {
+            var response = _mapper.Map<PostResponse>(post);
+            response.IsLiked = currentUserId != null && post.Likes.Any(l => l.CognitoUserId == currentUserId);
+            return response;
         }
     }
 }

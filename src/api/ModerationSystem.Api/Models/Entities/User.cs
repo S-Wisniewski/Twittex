@@ -8,20 +8,29 @@ namespace ModerationSystem.Api.Models.Entities
         [Required]
         public string CognitoUserId { get; set; } = null!;
 
+        [Required]
+        public string UserName { get; set; } = string.Empty;
+
+        public string? DisplayName { get; set; }
+
+        public string? Bio { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         [Url]
         [MaxLength(2048)]
         public string? AvatarUrl { get; set; }
 
-        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+        public ICollection<Post> Posts { get; set; } = new List<Post>();
 
-        public virtual ICollection<PostLikes> LikedPosts { get; set; } = new List<PostLikes>();
+        public ICollection<PostLikes> LikedPosts { get; set; } = new List<PostLikes>();
 
-        public virtual ICollection<UserFollows> Followers { get; set; } = new List<UserFollows>();
+        public ICollection<UserFollows> Followers { get; set; } = new List<UserFollows>();
 
-        public virtual ICollection<UserFollows> Following { get; set; } = new List<UserFollows>();
+        public ICollection<UserFollows> Following { get; set; } = new List<UserFollows>();
 
-        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public ICollection<Review> Reviews { get; set; } = new List<Review>();
 
-        public virtual ICollection<Log> Logs { get; set; } = new List<Log>();
+        public ICollection<Log> Logs { get; set; } = new List<Log>();
     }
 }

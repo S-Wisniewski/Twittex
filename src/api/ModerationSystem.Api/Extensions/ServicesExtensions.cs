@@ -4,6 +4,8 @@ using ModerationSystem.Api.Services.Posts;
 using ModerationSystem.Api.Services.Audit;
 using ModerationSystem.Api.Mappings;
 using ModerationSystem.Api.Services.Notifications;
+using ModerationSystem.Api.Services.Users;
+using ModerationSystem.Api.Services.Auth;
 
 namespace ModerationSystem.Api.Extensions
 {
@@ -19,6 +21,8 @@ namespace ModerationSystem.Api.Extensions
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IAuditService, AuditService>();
             services.AddScoped<NotificationService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             services.AddSignalR();
 
