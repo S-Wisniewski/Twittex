@@ -4,6 +4,7 @@ using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Models.Entities;
 using ModerationSystem.Api.Models.Enums;
+using ModerationSystem.Api.Services.Ai;
 
 namespace ModerationSystem.Api.Services.Posts
 {
@@ -11,11 +12,13 @@ namespace ModerationSystem.Api.Services.Posts
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IAiService _aiService;
 
-        public PostService(AppDbContext context, IMapper mapper)
+        public PostService(AppDbContext context, IMapper mapper, IAiService aiService)
         {
             _context = context;
             _mapper = mapper;
+            _aiService = aiService;
         }
 
         public async Task<IEnumerable<PostResponse>> GetFeedAsync(int pageNumber = 1, int pageSize = 10, string? currentUserId = null)
@@ -62,12 +65,15 @@ namespace ModerationSystem.Api.Services.Posts
             // Handle ParentPostId being 0 (which some frontends might send instead of null)
             int? parentPostId = request.ParentPostId == 0 ? null : request.ParentPostId;
 
+            // Moderate content using AI
+            var status = await _aiService.ModerateContentAsync(request.Content);
+
             var post = new Post
             {
                 CognitoUserId = userId,
                 Content = request.Content,
                 ParentPostId = parentPostId,
-                Status = PostStatus.Pending
+                Status = status
             };
 
             _context.Posts.Add(post);

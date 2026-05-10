@@ -6,6 +6,7 @@ using ModerationSystem.Api.Services.Audit;
 using ModerationSystem.Api.Services.Auth;
 using ModerationSystem.Api.Services.Posts;
 using ModerationSystem.Api.Services.Users;
+using ModerationSystem.Api.Services.Ai;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using DotNetEnv;
@@ -67,6 +68,7 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAiService, AiService>();
 
 builder.Services.AddAutoMapper(
     cfg => { },
