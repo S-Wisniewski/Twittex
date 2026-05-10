@@ -23,7 +23,6 @@ namespace ModerationSystem.Api.Services.Posts
             var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
-                .Include(p => p.Reviews)
                 .Include(p => p.Replies)
                 .OrderByDescending(p => p.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
@@ -38,7 +37,6 @@ namespace ModerationSystem.Api.Services.Posts
             var post = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
-                .Include(p => p.Reviews)
                 .Include(p => p.Replies)
                 .FirstOrDefaultAsync(p => p.Id == postId);
 
@@ -51,7 +49,6 @@ namespace ModerationSystem.Api.Services.Posts
             var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
-                .Include(p => p.Reviews)
                 .Include(p => p.Replies)
                 .Where(p => p.CognitoUserId == userId)
                 .OrderByDescending(p => p.CreatedAt)
@@ -126,31 +123,6 @@ namespace ModerationSystem.Api.Services.Posts
             }
 
             return true;
-        }
-
-        public async Task<ReviewResponse> PostReviewAsync(int postId, string userId, PostReviewRequest request)
-        {
-            var review = new Review
-            {
-                PostId = postId,
-                CognitoUserId = userId,
-                ReviewType = request.ReviewType,
-                Description = request.Description
-            };
-
-            _context.Set<Review>().Add(review);
-            await _context.SaveChangesAsync();
-
-            return _mapper.Map<ReviewResponse>(review);
-        }
-
-        public async Task<IEnumerable<ReviewResponse>> GetReviewsAsync(int postId)
-        {
-            var reviews = await _context.Set<Review>()
-                .Where(r => r.PostId == postId)
-                .ToListAsync();
-
-            return _mapper.Map<IEnumerable<ReviewResponse>>(reviews);
         }
 
         private PostResponse MapToPostResponse(Post post, string? currentUserId)

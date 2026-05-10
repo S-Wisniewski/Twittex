@@ -84,7 +84,6 @@ namespace ModerationSystem.Tests
 
             // Assert
             Assert.Equal("user-123", response.Id);
-            Assert.Equal("user-123", response.UserId);
             Assert.Equal("testuser", response.UserName);
             Assert.Equal("My Bio", response.Content);
             Assert.Equal("http://avatar.com", response.UserAvatarUrl);
@@ -114,30 +113,6 @@ namespace ModerationSystem.Tests
             Assert.Equal(log.NewStatus, response.NewStatus);
             Assert.Equal("Looks good", response.Reason);
             Assert.Equal("admin-1", response.TriggeredBy);
-        }
-
-        [Fact]
-        public void Review_To_ReviewResponse_ShouldMapCorrectly()
-        {
-            // Arrange
-            var review = new Review
-            {
-                Id = 20,
-                PostId = 1,
-                CognitoUserId = "reviewer-1",
-                Description = "Bad content",
-                ReviewType = ModerationSystem.Api.Models.Enums.ReviewType.Spam
-            };
-
-            // Act
-            var response = _mapper.Map<ReviewResponse>(review);
-
-            // Assert
-            Assert.Equal("20", response.Id);
-            Assert.Equal(1, response.PostId);
-            Assert.Equal("reviewer-1", response.CognitoUserId);
-            Assert.Equal("Bad content", response.Description);
-            Assert.Equal(ModerationSystem.Api.Models.Enums.ReviewType.Spam, response.ReviewType);
         }
     }
 }
