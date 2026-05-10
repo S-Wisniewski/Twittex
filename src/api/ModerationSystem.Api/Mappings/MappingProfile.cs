@@ -20,13 +20,11 @@ namespace ModerationSystem.Api.Mappings
 
             CreateMap<User, UserResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CognitoUserId))
-                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.CognitoUserId))
                 .ForMember(dest => dest.Content, opt => opt.MapFrom(src => src.Bio ?? string.Empty))
                 .ForMember(dest => dest.UserAvatarUrl, opt => opt.MapFrom(src => src.AvatarUrl ?? string.Empty))
                 .ForMember(dest => dest.Followers, opt => opt.MapFrom(src => src.Followers.Count))
                 .ForMember(dest => dest.Following, opt => opt.MapFrom(src => src.Following.Count))
-                .ForMember(dest => dest.YouFollow, opt => opt.Ignore()) // Context dependent
-                .ForMember(dest => dest.IsLiked, opt => opt.Ignore());
+                .ForMember(dest => dest.YouFollow, opt => opt.Ignore()); // Context dependent
 
             CreateMap<Log, PostLogResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()));

@@ -2,6 +2,8 @@ UserController ('/users')
 - GET:/ getAll() -> UserResponse[]
 - GET:/${userId} getUser() -> UserResponse
 - GET:/search?q=... searchUser() -> UserResponse[]
+- GET:/${userId}/followers getFollowers() -> UserResponse[]
+- GET:/${userId}/following getFollowing() -> UserResponse[]
 - PATCH:/${id} updateUser(body: {displayName?: string, userName?: string, bio?: string}) -> UserResponse
 - POST:/${userId}/follow followUser() -> void // follow/unfollow
 - DELETE:/${userId} deleteUser() -> void
