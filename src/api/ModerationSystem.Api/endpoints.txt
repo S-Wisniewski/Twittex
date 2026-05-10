@@ -61,9 +61,11 @@ ReviewType =
   | "Other";
 
 AuthController ('/auth')
+- POST:/sign-up signUp(body: {username: string, email: string, password: string, displayName?: string, bio?: string}) -> string
+- POST:/confirm-email confirmEmail(body: {username: string, confirmationCode: string}) -> string
 - POST:/log-in logIn(body: {username: string, password: string}) -> TokenResponse
 - POST:/log-out logOut() -> void
-- GET:/refresh-token getRefreshToken() -> TokenResponse
+- POST:/refresh-token?refreshToken=... refreshToken() -> TokenResponse
 
 TokenResponse = {
   accessToken: string

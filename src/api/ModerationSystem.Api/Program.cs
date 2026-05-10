@@ -1,13 +1,14 @@
-using Microsoft.EntityFrameworkCore;
-using ModerationSystem.Api.Data;
-using Scalar.AspNetCore;
-using ModerationSystem.Api.Services.Audit;
-using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using ModerationSystem.Api.Data;
+using ModerationSystem.Api.Mappings;
+using ModerationSystem.Api.Services.Audit;
+using ModerationSystem.Api.Services.Auth;
 using ModerationSystem.Api.Services.Posts;
 using ModerationSystem.Api.Services.Users;
-using ModerationSystem.Api.Mappings;
+using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
+using DotNetEnv;
 
 var rootPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../"));
 var envPath = Path.Combine(rootPath, ".env");
@@ -54,6 +55,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddAutoMapper(
     cfg => { },
