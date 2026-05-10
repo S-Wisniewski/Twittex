@@ -16,11 +16,11 @@ namespace ModerationSystem.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetFeed()
+        public async Task<IActionResult> GetFeed([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             // Mocking current user since auth is not implemented yet
             string? currentUserId = "mocked-current-user-id";
-            var posts = await _postService.GetFeedAsync(currentUserId);
+            var posts = await _postService.GetFeedAsync(page, pageSize, currentUserId);
             return Ok(posts);
         }
 
