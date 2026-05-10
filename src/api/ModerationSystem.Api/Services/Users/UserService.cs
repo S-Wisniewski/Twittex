@@ -68,6 +68,38 @@ namespace ModerationSystem.Api.Services.Users
             return MapToResponse(user, userId);
         }
 
+        public async Task<IEnumerable<UserResponse>> GetFollowersAsync(string userId, string? currentUserId = null)
+        {
+            var user = await _context.Users
+                .Include(u => u.Followers)
+                    .ThenInclude(f => f.Follower)
+                        .ThenInclude(u => u.Followers)
+                .Include(u => u.Followers)
+                    .ThenInclude(f => f.Follower)
+                        .ThenInclude(u => u.Following)
+                .FirstOrDefaultAsync(u => u.CognitoUserId == userId);
+
+            if (user == null) return Enumerable.Empty<UserResponse>();
+
+            return user.Followers.Select(f => MapToResponse(f.Follower, currentUserId));
+        }
+
+        public async Task<IEnumerable<UserResponse>> GetFollowingAsync(string userId, string? currentUserId = null)
+        {
+            var user = await _context.Users
+                .Include(u => u.Following)
+                    .ThenInclude(f => f.Followed)
+                        .ThenInclude(u => u.Followers)
+                .Include(u => u.Following)
+                    .ThenInclude(f => f.Followed)
+                        .ThenInclude(u => u.Following)
+                .FirstOrDefaultAsync(u => u.CognitoUserId == userId);
+
+            if (user == null) return Enumerable.Empty<UserResponse>();
+
+            return user.Following.Select(f => MapToResponse(f.Followed, currentUserId));
+        }
+
         public async Task<bool> FollowUserAsync(string userId, string currentUserId)
         {
             if (userId == currentUserId) return false;
