@@ -29,8 +29,6 @@ namespace ModerationSystem.Api.Models.Entities
 
         public ICollection<UserFollows> Following { get; set; } = new List<UserFollows>();
 
-        public ICollection<Review> Reviews { get; set; } = new List<Review>();
-
         public ICollection<Log> Logs { get; set; } = new List<Log>();
     }
 }

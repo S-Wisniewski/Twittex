@@ -9,8 +9,6 @@ namespace ModerationSystem.Api.Data
 
         public DbSet<Post> Posts { get; set; }
 
-        public DbSet<Review> Reviews { get; set; }
-
         public DbSet<PostLikes> PostLikes { get; set; }
 
         public DbSet<UserFollows> UserFollows { get; set; }
@@ -64,19 +62,6 @@ namespace ModerationSystem.Api.Data
                 entity.HasOne(f => f.Followed)
                     .WithMany(u => u.Followers)
                     .HasForeignKey(f => f.FollowedId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            modelBuilder.Entity<Review>(entity =>
-            {
-                entity.HasKey(r => r.Id);
-                entity.HasOne(r => r.Post)
-                    .WithMany(p => p.Reviews)
-                    .HasForeignKey(r => r.PostId);
-
-                entity.HasOne(r => r.User)
-                    .WithMany()
-                    .HasForeignKey(r => r.CognitoUserId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }

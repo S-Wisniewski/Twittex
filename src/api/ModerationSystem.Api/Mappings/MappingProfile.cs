@@ -28,9 +28,6 @@ namespace ModerationSystem.Api.Mappings
 
             CreateMap<Log, PostLogResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()));
-
-            CreateMap<Review, ReviewResponse>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id.ToString()));
         }
     }
 }
