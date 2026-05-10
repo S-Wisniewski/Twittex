@@ -29,7 +29,7 @@ namespace ModerationSystem.Api.Data
                 entity.HasQueryFilter(p => p.DeletedAt == null);
                 entity.HasKey(e => e.Id);
                 entity.HasOne(p => p.ParentPost)
-                    .WithMany()
+                    .WithMany(p => p.Replies)
                     .HasForeignKey(p => p.ParentPostId)
                     .OnDelete(DeleteBehavior.Restrict);
 

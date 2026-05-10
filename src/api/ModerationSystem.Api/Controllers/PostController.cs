@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Services.Posts;
 
@@ -6,6 +7,7 @@ namespace ModerationSystem.Api.Controllers
 {
     [ApiController]
     [Route("api/posts")]
+    [Authorize]
     public class PostsController : ControllerBase
     {
         private readonly IPostService _postService;
@@ -15,65 +17,95 @@ namespace ModerationSystem.Api.Controllers
             _postService = postService;
         }
 
+        private string? GetCurrentUserId() => User.FindFirst("sub")?.Value;
+
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFeed([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var posts = await _postService.GetAllPostsAsync();
+            string? currentUserId = GetCurrentUserId();
+            var posts = await _postService.GetFeedAsync(page, pageSize, currentUserId);
             return Ok(posts);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        [HttpGet("{postId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetById(int postId)
         {
-            var post = await _postService.GetPostByIdAsync(id);
-            if (post == null) return NotFound(new { Message = "Post not found." });
+            string? currentUserId = GetCurrentUserId();
+            var post = await _postService.GetByIdAsync(postId, currentUserId);
+            if (post == null) return NotFound();
 
             return Ok(post);
         }
 
-        //[HttpGet("status/{status}")]
-        //public async Task<IActionResult> GetByStatus(PostStatus status)
-        //{
-        //    var posts = await _postService.GetPostsByStatusAsync(status);
-        //    return Ok(posts);
-        //}
+        [HttpGet("~/api/users/{userId}/posts")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUsersPosts(string userId)
+        {
+            string? currentUserId = GetCurrentUserId();
+            var posts = await _postService.GetUsersPostsAsync(userId, currentUserId);
+            return Ok(posts);
+        }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreatePostDto dto)
+        public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var createdPost = await _postService.CreatePostAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = createdPost.Id }, createdPost);
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var createdPost = await _postService.CreatePostAsync(request, currentUserId);
+            return CreatedAtAction(nameof(GetById), new { postId = int.Parse(createdPost.Id) }, createdPost);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdatePostDto dto)
+        [HttpGet("{id}/logs")]
+        public async Task<IActionResult> GetLogs(int id)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var logs = await _postService.GetLogsAsync(id);
+            return Ok(logs);
+        }
 
-            var success = await _postService.UpdatePostAsync(id, dto);
-            if (!success) return NotFound(new { Message = "Post not found." });
+        [HttpPost("{id}/likes")]
+        public async Task<IActionResult> LikePost(int id)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var success = await _postService.LikePostAsync(id, currentUserId);
+            if (!success) return NotFound();
+
+            return Ok();
+        }
+
+        [HttpDelete("{id}/likes")]
+        public async Task<IActionResult> UnlikePost(int id)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var success = await _postService.UnlikePostAsync(id, currentUserId);
+            if (!success) return NotFound();
 
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpPost("{id}/reviews")]
+        public async Task<IActionResult> PostReview(int id, [FromBody] PostReviewRequest request)
         {
-            var success = await _postService.DeletePostAsync(id);
-            if (!success) return NotFound(new { Message = "Post not found." });
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
 
-            return NoContent();
+            var review = await _postService.PostReviewAsync(id, currentUserId, request);
+            return CreatedAtAction(nameof(GetReviews), new { id = id }, review);
         }
 
-        //[HttpPatch("{id}/status")]
-        //public async Task<IActionResult> ChangeStatus(int id, [FromBody] PostStatus newStatus)
-        //{
-        //    var success = await _postService.ChangePostStatusAsync(id, newStatus);
-        //    if (!success) return NotFound(new { Message = "Post not found." });
-
-        //    return NoContent();
-        //}
+        [HttpGet("{id}/reviews")]
+        public async Task<IActionResult> GetReviews(int id)
+        {
+            var reviews = await _postService.GetReviewsAsync(id);
+            return Ok(reviews);
+        }
     }
 }
