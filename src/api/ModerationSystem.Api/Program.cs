@@ -1,39 +1,22 @@
-using Microsoft.EntityFrameworkCore;
-using ModerationSystem.Api.Data;
-using Scalar.AspNetCore;
+using DotNetEnv;
+using ModerationSystem.Api.Extensions;
+
+var rootPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "../../../"));
+var envPath = Path.Combine(rootPath, ".env");
+
+if (File.Exists(envPath))
+{
+    Env.Load(envPath);
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
+builder.Services.AddAppServices(builder.Configuration);
+builder.Services.AddAuth(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-
-    app.MapScalarApiReference(options =>
-    {
-        options
-            .WithTitle("API")
-            .WithTheme(ScalarTheme.Moon)
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-    });
-}
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.UseAppPipeline();
 
 app.Run();

@@ -2,21 +2,33 @@
 
 namespace ModerationSystem.Api.Models.Entities
 {
-    public class User
-    {
-        [Key]
-        [Required]
-        public string CognitoUserId { get; set; } = string.Empty;
+        public class User
+        {
+                [Key]
+                [Required]
+                public string CognitoUserId { get; set; } = null!;
 
-        [Url]
-        [MaxLength(2048)]
-        public string? AvatarUrl { get; set; }
+                [Required]
+                public string UserName { get; set; } = string.Empty;
 
-        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
-        public virtual ICollection<PostLikes> LikedPosts { get; set; } = new List<PostLikes>();
-        public virtual ICollection<UserFollows> Followers { get; set; } = new List<UserFollows>();
-        public virtual ICollection<UserFollows> Following { get; set; } = new List<UserFollows>();
-        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-        public virtual ICollection<Log> Logs { get; set; } = new List<Log>();
-    }
+                public string? DisplayName { get; set; }
+
+                public string? Bio { get; set; }
+
+                public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+                [Url]
+                [MaxLength(2048)]
+                public string? AvatarUrl { get; set; }
+
+                public ICollection<Post> Posts { get; set; } = new List<Post>();
+
+                public ICollection<PostLikes> LikedPosts { get; set; } = new List<PostLikes>();
+
+                public ICollection<UserFollows> Followers { get; set; } = new List<UserFollows>();
+
+                public ICollection<UserFollows> Following { get; set; } = new List<UserFollows>();
+
+                public ICollection<Log> Logs { get; set; } = new List<Log>();
+        }
 }
