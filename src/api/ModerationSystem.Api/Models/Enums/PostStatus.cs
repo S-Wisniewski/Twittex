@@ -5,8 +5,8 @@
         Pending = 0,
         Published = 1,
         Flagged = 2,
-        Review = 3,
-        Rejected = 4
+        Rejected = 3,
+        Error = 4
     }
 }
 

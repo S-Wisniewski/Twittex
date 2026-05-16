@@ -11,7 +11,5 @@ namespace ModerationSystem.Api.Services.Posts
         Task<IEnumerable<PostLogResponse>> GetLogsAsync(int postId);
         Task<bool> LikePostAsync(int postId, string userId);
         Task<bool> UnlikePostAsync(int postId, string userId);
-        Task<ReviewResponse> PostReviewAsync(int postId, string userId, PostReviewRequest request);
-        Task<IEnumerable<ReviewResponse>> GetReviewsAsync(int postId);
     }
 }
