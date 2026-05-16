@@ -27,14 +27,14 @@ namespace ModerationSystem.Api.Controllers
         [HttpPost("confirm-email")]
         public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
         {
-            var success = await _authService.ConfirmEmailAsync(request.UserName, request.ConfirmationCode);
+            var success = await _authService.ConfirmEmailAsync(request.Email, request.ConfirmationCode);
             if (!success) return BadRequest("Could not confirm email. Invalid code or username.");
 
             return Ok("Email confirmed successfully. You can now log in.");
         }
 
         [HttpPost("log-in")]
-        public async Task<IActionResult> LogIn([FromBody] LoginRequest request)
+        public async Task<ActionResult<TokenResponse>> LogIn([FromBody] LoginRequest request)
         {
             var response = await _authService.LogInAsync(request);
             if (response == null) return Unauthorized("Invalid username or password.");
@@ -43,7 +43,7 @@ namespace ModerationSystem.Api.Controllers
         }
 
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromQuery] string refreshToken)
+        public async Task<ActionResult<TokenResponse>> RefreshToken([FromQuery] string refreshToken)
         {
             var response = await _authService.RefreshTokenAsync(refreshToken);
             if (response == null) return Unauthorized("Invalid refresh token.");
