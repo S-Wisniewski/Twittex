@@ -24,6 +24,7 @@ namespace ModerationSystem.Api.Data
 
             modelBuilder.Entity<Post>(entity =>
             {
+                entity.HasQueryFilter(p => p.DeletedAt == null);
                 entity.HasKey(e => e.Id);
                 entity.HasOne(p => p.ParentPost)
                     .WithMany(p => p.Replies)

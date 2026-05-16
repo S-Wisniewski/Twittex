@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Services.Posts;
-using System.Security.Claims;
 
 namespace ModerationSystem.Api.Controllers
 {

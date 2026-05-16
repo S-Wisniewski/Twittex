@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Models.Entities;
-using ModerationSystem.Api.Models.Enums;
+using ModerationSystem.Api.Services.Audit;
+using ModerationSystem.Api.Services.Notifications;
 using ModerationSystem.Api.Services.Ai;
 
 namespace ModerationSystem.Api.Services.Posts
@@ -12,12 +13,21 @@ namespace ModerationSystem.Api.Services.Posts
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IAuditService _auditService;
+        private readonly NotificationService _notificationsService;
         private readonly IAiService _aiService;
 
-        public PostService(AppDbContext context, IMapper mapper, IAiService aiService)
+        public PostService(
+            AppDbContext context,
+            IMapper mapper,
+            IAuditService auditService,
+            NotificationService notificationsService,
+            IAiService aiService)
         {
             _context = context;
             _mapper = mapper;
+            _auditService = auditService;
+            _notificationsService = notificationsService;
             _aiService = aiService;
         }
 
@@ -77,7 +87,13 @@ namespace ModerationSystem.Api.Services.Posts
             };
 
             _context.Posts.Add(post);
+            _auditService.AddLog(
+               userId,
+               $"Post created: {request.Content.Substring(0, Math.Min(50, request.Content.Length))}..."
+           );
+
             await _context.SaveChangesAsync();
+            await _notificationsService.NotifyModeratorsOfPendingPost(post);
 
             await _context.Entry(post).Reference(p => p.User).LoadAsync();
             await _context.Entry(post).Collection(p => p.Likes).LoadAsync();
