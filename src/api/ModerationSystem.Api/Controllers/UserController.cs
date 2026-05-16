@@ -50,6 +50,24 @@ namespace ModerationSystem.Api.Controllers
             return Ok(users);
         }
 
+        [HttpGet("{userId}/followers")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFollowers(string userId)
+        {
+            string? currentUserId = GetCurrentUserId();
+            var users = await _userService.GetFollowersAsync(userId, currentUserId);
+            return Ok(users);
+        }
+
+        [HttpGet("{userId}/following")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFollowing(string userId)
+        {
+            string? currentUserId = GetCurrentUserId();
+            var users = await _userService.GetFollowingAsync(userId, currentUserId);
+            return Ok(users);
+        }
+
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest body)
         {

@@ -2,6 +2,8 @@ UserController ('/users')
 - GET:/ getAll() -> UserResponse[]
 - GET:/${userId} getUser() -> UserResponse
 - GET:/search?q=... searchUser() -> UserResponse[]
+- GET:/${userId}/followers getFollowers() -> UserResponse[]
+- GET:/${userId}/following getFollowing() -> UserResponse[]
 - PATCH:/${id} updateUser(body: {displayName?: string, userName?: string, bio?: string}) -> UserResponse
 - POST:/${userId}/follow followUser() -> void // follow/unfollow
 - DELETE:/${userId} deleteUser() -> void
@@ -27,8 +29,6 @@ PostsController ('/posts')
 - GET:/${id}/logs getLogs() -> PostLogResponse[]
 - POST:/${id}/likes likePost() -> void
 - DELETE:/${id}/likes likePost() -> void
-- POST:/${id}/reviews postReview(body: {eviewType: ReviewType, description?: string}) -> ReviewResponse
-- GET:/${id}/reviews getReviews() -> ReviewResponse[]
 
 PostResponse = {
   id: string;
@@ -51,14 +51,6 @@ PostLogResponse = {
   triggeredBy: "llm" | "moderator" | "community" | "system";
   createdAt: string;
 }
-
-ReviewType =
-  | "InappropriateContent"
-  | "Spam"
-  | "Harassment"
-  | "HateSpeech"
-  | "Misinformation"
-  | "Other";
 
 AuthController ('/auth')
 - POST:/sign-up signUp(body: {username: string, email: string, password: string, displayName?: string, bio?: string}) -> string

@@ -90,22 +90,5 @@ namespace ModerationSystem.Api.Controllers
 
             return NoContent();
         }
-
-        [HttpPost("{id}/reviews")]
-        public async Task<IActionResult> PostReview(int id, [FromBody] PostReviewRequest request)
-        {
-            string? currentUserId = GetCurrentUserId();
-            if (currentUserId == null) return Unauthorized();
-
-            var review = await _postService.PostReviewAsync(id, currentUserId, request);
-            return CreatedAtAction(nameof(GetReviews), new { id = id }, review);
-        }
-
-        [HttpGet("{id}/reviews")]
-        public async Task<IActionResult> GetReviews(int id)
-        {
-            var reviews = await _postService.GetReviewsAsync(id);
-            return Ok(reviews);
-        }
     }
 }
