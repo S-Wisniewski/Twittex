@@ -1,7 +1,6 @@
 using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
-using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.AuthDtos;
 using ModerationSystem.Api.Models.Entities;
@@ -32,11 +31,12 @@ namespace ModerationSystem.Api.Services.Auth
                 var signUpRequest = new Amazon.CognitoIdentityProvider.Model.SignUpRequest
                 {
                     ClientId = _clientId,
-                    Username = request.UserName,
+                    Username = request.Email,
                     Password = request.Password,
                     UserAttributes = new List<AttributeType>
                     {
-                        new AttributeType { Name = "email", Value = request.Email }
+                        new AttributeType { Name = "email", Value = request.Email },
+                        new AttributeType { Name = "preferred_username", Value = request.UserName }
                     }
                 };
 
@@ -57,8 +57,9 @@ namespace ModerationSystem.Api.Services.Auth
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception a)
             {
+                Console.WriteLine(a);
                 return false;
             }
         }
@@ -93,7 +94,7 @@ namespace ModerationSystem.Api.Services.Auth
                     ClientId = _clientId,
                     AuthParameters = new Dictionary<string, string>
                     {
-                        { "USERNAME", request.UserName },
+                        { "USERNAME", request.Email },
                         { "PASSWORD", request.Password }
                     }
                 };
