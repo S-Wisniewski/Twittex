@@ -36,7 +36,6 @@ namespace ModerationSystem.Api.Services.Auth
                     UserAttributes = new List<AttributeType>
                     {
                         new AttributeType { Name = "email", Value = request.Email },
-                        new AttributeType { Name = "preferred_username", Value = request.UserName }
                     }
                 };
 
