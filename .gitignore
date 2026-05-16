@@ -36,6 +36,7 @@ bin/
 obj/
 .vs/
 *.user
+appsettings.Development.json
 
 # --- Node / React (Frontend) ---
 node_modules/

@@ -12,7 +12,7 @@ namespace ModerationSystem.Api.Services.Audit
             _db = db;
         }
 
-        public async Task LogAsync(string cognitoUserId, string content)
+        public void AddLog(string cognitoUserId, string content)
         {
             var log = new Log
             {
@@ -20,8 +20,7 @@ namespace ModerationSystem.Api.Services.Audit
                 Content = content
             };
 
-            await _db.AddAsync(log);
-            await _db.SaveChangesAsync();
+            _db.Add(log);
         }
     }
 }
