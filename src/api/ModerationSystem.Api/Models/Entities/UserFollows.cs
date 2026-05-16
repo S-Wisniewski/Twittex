@@ -2,16 +2,18 @@
 
 namespace ModerationSystem.Api.Models.Entities
 {
-    public class UserFollows
-    {
-        [Required]
-        public string FollowerId { get; set; }
-        public virtual User Follower { get; set; }
+        public class UserFollows
+        {
+                [Required]
+                public string FollowerId { get; set; } = null!;
 
-        [Required]
-        public string FollowedId { get; set; }
-        public virtual User Followed { get; set; }
+                public User Follower { get; set; } = null!;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    }
+                [Required]
+                public string FollowedId { get; set; } = null!;
+
+                public User Followed { get; set; } = null!;
+
+                public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        }
 }
