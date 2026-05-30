@@ -4,11 +4,11 @@ public class PostDto
 {
     public int Id { get; set; }
 
-    public string UserId { get; set; }
+    public string UserId { get; set; } = string.Empty;
 
-    public string Content { get; set; }
+    public string Content { get; set; } = string.Empty;
 
-    public string Status { get; set; }
+    public string Status { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
 
