@@ -44,11 +44,13 @@ namespace ModerationSystem.Api.Services.Auth
 
                 var response = await _cognitoClient.SignUpAsync(signUpRequest);
 
-                // Add to our database
+                var userName = GenerateTempUserName();
+
                 var user = new User
                 {
                     CognitoUserId = response.UserSub,
-                    UserName = request.Email,
+                    Email = request.Email.ToLower().Trim(),
+                    UserName = userName,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -201,6 +203,12 @@ namespace ModerationSystem.Api.Services.Auth
                 _logger.LogError(ex, "Unexpected error in ChangePassword");
                 return false;
             }
+        }
+
+        private string GenerateTempUserName()
+        {
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            return $"user_{suffix}";
         }
     }
 }

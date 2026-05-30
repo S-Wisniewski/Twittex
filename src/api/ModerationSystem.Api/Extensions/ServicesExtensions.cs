@@ -26,6 +26,9 @@ namespace ModerationSystem.Api.Extensions
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAiService, AiService>();
+
+            services.AddDefaultAWSOptions(config.GetAWSOptions());
+
             services.AddAWSService<IAmazonCognitoIdentityProvider>();
 
             services.AddSignalR();
