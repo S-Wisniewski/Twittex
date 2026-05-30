@@ -14,14 +14,14 @@ namespace ModerationSystem.Api.Services.Posts
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly IAuditService _auditService;
-        private readonly NotificationService _notificationsService;
+        private readonly INotificationService _notificationsService;
         private readonly IAiService _aiService;
 
         public PostService(
             AppDbContext context,
             IMapper mapper,
             IAuditService auditService,
-            NotificationService notificationsService,
+            INotificationService notificationsService,
             IAiService aiService)
         {
             _context = context;

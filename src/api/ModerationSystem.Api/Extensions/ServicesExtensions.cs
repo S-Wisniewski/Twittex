@@ -7,7 +7,6 @@ using ModerationSystem.Api.Services.Notifications;
 using ModerationSystem.Api.Services.Users;
 using ModerationSystem.Api.Services.Auth;
 using ModerationSystem.Api.Services.Ai;
-using Amazon.CognitoIdentityProvider;
 
 namespace ModerationSystem.Api.Extensions
 {
@@ -22,14 +21,11 @@ namespace ModerationSystem.Api.Extensions
 
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IAuditService, AuditService>();
-            services.AddScoped<NotificationService>();
+            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAiService, AiService>();
-
-            services.AddDefaultAWSOptions(config.GetAWSOptions());
-
-            services.AddAWSService<IAmazonCognitoIdentityProvider>();
+            services.AddCognitoClient(config);
 
             services.AddSignalR();
 
