@@ -1,4 +1,3 @@
-using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 using ModerationSystem.Api.Data;
@@ -13,15 +12,19 @@ namespace ModerationSystem.Api.Services.Auth
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly string _clientId;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(IConfiguration configuration, AppDbContext context)
+        public AuthService(
+            IConfiguration configuration,
+            AppDbContext context,
+            IAmazonCognitoIdentityProvider cognitoClient,
+            ILogger<AuthService> logger)
         {
             _configuration = configuration;
             _context = context;
-            _clientId = _configuration["Cognito:Audience"]!;
-
-            var region = RegionEndpoint.GetBySystemName(_configuration["Cognito:Region"]);
-            _cognitoClient = new AmazonCognitoIdentityProviderClient(region);
+            _clientId = _configuration["Cognito:ClientId"]!;
+            _cognitoClient = cognitoClient;
+            _logger = logger;
         }
 
         public async Task<bool> SignUpAsync(Models.Dto.AuthDtos.SignUpRequest request)
@@ -45,9 +48,7 @@ namespace ModerationSystem.Api.Services.Auth
                 var user = new User
                 {
                     CognitoUserId = response.UserSub,
-                    UserName = request.UserName,
-                    DisplayName = request.DisplayName ?? request.UserName,
-                    Bio = request.Bio,
+                    UserName = request.Email,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -56,9 +57,14 @@ namespace ModerationSystem.Api.Services.Auth
 
                 return true;
             }
-            catch (Exception a)
+            catch (UsernameExistsException ex)
             {
-                Console.WriteLine(a);
+                _logger.LogWarning(ex, "User already exists: {Email}", request.Email);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SignUp failed for {Email}", request.Email);
                 return false;
             }
         }
@@ -155,9 +161,45 @@ namespace ModerationSystem.Api.Services.Auth
 
                 await _cognitoClient.GlobalSignOutAsync(logOutRequest);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Log error
+                _logger.LogError(ex, "Logout failed");
+            }
+        }
+
+        public async Task<bool> ChangePasswordAsync(
+            string accessToken,
+            ChangePasswordRequestDto request)
+        {
+            try
+            {
+                await _cognitoClient.ChangePasswordAsync(new ChangePasswordRequest
+                {
+                    AccessToken = accessToken,
+                    PreviousPassword = request.CurrentPassword,
+                    ProposedPassword = request.NewPassword
+                });
+                return true;
+            }
+            catch (NotAuthorizedException ex)
+            {
+                _logger.LogWarning(ex, "Unauthorized password change attempt");
+                return false;
+            }
+            catch (InvalidPasswordException ex)
+            {
+                _logger.LogWarning(ex, "Invalid password provided");
+                return false;
+            }
+            catch (PasswordHistoryPolicyViolationException ex)
+            {
+                _logger.LogWarning(ex, "Password reuse attempt");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in ChangePassword");
+                return false;
             }
         }
     }
