@@ -21,7 +21,8 @@ namespace ModerationSystem.Api.Services.Auth
             _context = context;
             _clientId = _configuration["Cognito:Audience"]!;
 
-            var region = RegionEndpoint.GetBySystemName(_configuration["Cognito:Region"]);
+            var regionStr = _configuration["Cognito:Region"] ?? "eu-central-1";
+            var region = RegionEndpoint.GetBySystemName(regionStr);
             _cognitoClient = new AmazonCognitoIdentityProviderClient(region);
         }
 
