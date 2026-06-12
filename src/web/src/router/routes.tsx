@@ -4,11 +4,21 @@ import Home from "@/pages/Home";
 import Profile from "@/pages/Profile";
 import PostPage from "@/pages/PostPage";
 import Auth from "@/pages/Auth";
+import ConfirmEmail from "@/pages/ConfirmEmail";
+import Onboarding from "@/pages/Onboarding";
 
 const authRoutes: RouteObject[] = [
   {
     path: "/login",
     element: <Auth />,
+  },
+  {
+    path: "/confirm-email",
+    element: <ConfirmEmail />,
+  },
+  {
+    path: "/onboarding",
+    element: <Onboarding />,
   },
 ];
 
