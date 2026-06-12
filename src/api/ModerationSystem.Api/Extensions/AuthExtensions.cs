@@ -21,12 +21,17 @@ namespace ModerationSystem.Api.Extensions
                     {
                         ValidateIssuer = true,
                         ValidIssuer = authority,
-                        ValidateAudience = true,
-                        ValidAudience = audience,
+                        ValidateAudience = true, // custom AudienceValidator below handles Cognito's client_id claim
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ClockSkew = TimeSpan.FromMinutes(2),
-                        RoleClaimType = "cognito:groups"
+                        RoleClaimType = "cognito:groups",
+                        AudienceValidator = (_, securityToken, _) =>
+                        {
+                            var clientId = (securityToken as Microsoft.IdentityModel.JsonWebTokens.JsonWebToken)
+                                ?.GetClaim("client_id")?.Value;
+                            return clientId == audience;
+                        }
                     };
 
                     options.Events = new JwtBearerEvents

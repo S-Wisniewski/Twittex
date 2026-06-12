@@ -1,23 +1,20 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5260";
 
 export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-  ) {
+  constructor(message: string) {
     super(message);
     this.name = "ApiError";
   }
 }
 
 function getAuthToken(): string | null {
-  // TODO: retrieve Cognito JWT from auth context / storage
-  return null;
+  return sessionStorage.getItem("accessToken");
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken();
 
+  console.log(options);
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers: {
@@ -29,15 +26,25 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const message = await res.text().catch(() => res.statusText);
-    throw new ApiError(res.status, message);
+    throw new ApiError(message);
   }
 
   if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
 }
 
 export const apiClient = {
-  get: <T>(path: string) => request<T>(path, { method: "GET" }),
+  get: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: "GET",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
   post: <T>(path: string, body?: unknown) =>
     request<T>(path, {
       method: "POST",
@@ -48,5 +55,9 @@ export const apiClient = {
       method: "PATCH",
       body: body !== undefined ? JSON.stringify(body) : undefined,
     }),
-  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  delete: <T>(path: string, body?: unknown) =>
+    request<T>(path, {
+      method: "DELETE",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    }),
 };
