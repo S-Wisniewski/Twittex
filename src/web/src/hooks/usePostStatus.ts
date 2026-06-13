@@ -33,6 +33,7 @@ export function usePostStatus(postId: string, initialStatus: PostStatus) {
   useEffect(() => {
     if (TERMINAL_STATUSES.includes(status)) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsPolling(true);
     intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
 

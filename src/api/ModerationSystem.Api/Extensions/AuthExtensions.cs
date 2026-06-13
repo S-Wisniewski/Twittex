@@ -26,7 +26,13 @@ namespace ModerationSystem.Api.Extensions
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ClockSkew = TimeSpan.FromMinutes(2),
-                        RoleClaimType = "cognito:groups"
+                        RoleClaimType = "cognito:groups",
+                        AudienceValidator = (_, securityToken, _) =>
+                        {
+                            var clientId = (securityToken as Microsoft.IdentityModel.JsonWebTokens.JsonWebToken)
+                                ?.GetClaim("client_id")?.Value;
+                            return clientId == audience;
+                        }
                     };
 
                     options.Events = new JwtBearerEvents

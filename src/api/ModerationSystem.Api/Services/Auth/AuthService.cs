@@ -118,8 +118,9 @@ namespace ModerationSystem.Api.Services.Auth
                     ExpiresIn = response.AuthenticationResult.ExpiresIn ?? 0
                 };
             }
-            catch (Exception)
+            catch (Exception exc)
             {
+                Console.WriteLine(exc);
                 return null;
             }
         }

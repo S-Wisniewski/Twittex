@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "@/components/UserAvatar";
@@ -40,13 +40,13 @@ const ComposePostDialog = ({
   const open = isControlled ? controlledOpen : internalOpen;
 
   // Reset draft each time the dialog transitions from closed → open
-  const prevOpenRef = useRef(false);
-  useEffect(() => {
-    if (open && !prevOpenRef.current) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
       setDraft("");
     }
-    prevOpenRef.current = open;
-  }, [open]);
+
+    setOpen(nextOpen);
+  };
 
   const setOpen = (value: boolean) => {
     if (isControlled) {
@@ -71,7 +71,7 @@ const ComposePostDialog = ({
     : "What's happening?";
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger render={trigger} />
       <DialogContent showCloseButton={false} className="max-w-lg">
         <DialogHeader>

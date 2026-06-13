@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { authApi } from "@/api/auth";
 
 type FormError = Partial<{
   email: string;
@@ -43,9 +44,23 @@ const Auth = () => {
     setSignInErrors({});
     setSignInLoading(true);
     try {
-      // TODO: await Auth.signIn(signInEmail, signInPassword) — Cognito
-      await new Promise((r) => setTimeout(r, 800)); // mock delay
-      navigate("/");
+      const res = await authApi.logIn({
+        email: signInEmail,
+        password: signInPassword,
+      });
+      sessionStorage.setItem("accessToken", res.accessToken);
+      sessionStorage.setItem("refreshToken", res.refreshToken);
+      sessionStorage.setItem("idToken", res.idToken);
+      sessionStorage.setItem("expiresIn", res.expiresIn);
+
+      const payload = JSON.parse(atob(res.idToken.split(".")[1]));
+      sessionStorage.setItem("userId", payload.sub);
+
+      if (sessionStorage.getItem("pendingOnboarding")) {
+        navigate("/onboarding");
+      } else {
+        navigate("/");
+      }
     } catch {
       setSignInErrors({ general: "Invalid email or password." });
     } finally {
@@ -58,7 +73,7 @@ const Auth = () => {
     const errors: FormError = {};
     if (!signUpEmail) errors.email = "Email is required.";
     if (!signUpUsername) errors.username = "Username is required.";
-    else if (!/^[a-z0-9_]+$/i.test(signUpUsername))
+    else if (!/^[a-z0-9_.]+$/i.test(signUpUsername))
       errors.username = "Only letters, numbers and underscores.";
     if (!signUpPassword) errors.password = "Password is required.";
     else if (signUpPassword.length < 8)
@@ -75,9 +90,13 @@ const Auth = () => {
     setSignUpErrors({});
     setSignUpLoading(true);
     try {
-      // TODO: await Auth.signUp({ username: signUpEmail, password: signUpPassword, attributes: { preferred_username: signUpUsername } }) — Cognito
-      await new Promise((r) => setTimeout(r, 800)); // mock delay
-      navigate("/");
+      await authApi.signUp({
+        email: signUpEmail,
+        password: signUpPassword,
+        username: signUpUsername,
+      });
+      sessionStorage.setItem("pendingConfirmEmail", signUpEmail);
+      navigate("/confirm-email", { state: { email: signUpEmail } });
     } catch {
       setSignUpErrors({ general: "Registration failed. Please try again." });
     } finally {
@@ -220,7 +239,7 @@ const Auth = () => {
                       value={signUpUsername}
                       onChange={(e) =>
                         setSignUpUsername(
-                          e.target.value.replace(/[^a-z0-9_]/gi, ""),
+                          e.target.value.replace(/[^a-z0-9_.]/gi, ""),
                         )
                       }
                       aria-invalid={!!signUpErrors.username}
