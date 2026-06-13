@@ -145,19 +145,40 @@ namespace ModerationSystem.Api.Migrations
                         .HasColumnType("character varying(2048)");
 
                     b.Property<string>("Bio")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.HasKey("CognitoUserId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_User_CreatedAt");
+
+                    b.HasIndex("DisplayName")
+                        .HasDatabaseName("IX_User_DisplayName");
+
+                    b.HasIndex("Email")
+                        .HasDatabaseName("IX_User_Email");
+
+                    b.HasIndex("UserName")
+                        .IsUnique()
+                        .HasDatabaseName("UX_User_UserName");
 
                     b.ToTable("Users");
                 });

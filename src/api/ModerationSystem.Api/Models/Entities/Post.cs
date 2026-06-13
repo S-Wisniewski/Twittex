@@ -29,5 +29,3 @@ namespace ModerationSystem.Api.Models.Entities
         public ICollection<Log> Logs { get; set; } = new List<Log>();
     }
 }
-
-

@@ -1,7 +1,5 @@
-using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
-using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.AuthDtos;
 using ModerationSystem.Api.Models.Entities;
@@ -14,8 +12,13 @@ namespace ModerationSystem.Api.Services.Auth
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly string _clientId;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(IConfiguration configuration, AppDbContext context)
+        public AuthService(
+            IConfiguration configuration,
+            AppDbContext context,
+            IAmazonCognitoIdentityProvider cognitoClient,
+            ILogger<AuthService> logger)
         {
             _configuration = configuration;
             _context = context;
@@ -33,23 +36,23 @@ namespace ModerationSystem.Api.Services.Auth
                 var signUpRequest = new Amazon.CognitoIdentityProvider.Model.SignUpRequest
                 {
                     ClientId = _clientId,
-                    Username = request.UserName,
+                    Username = request.Email,
                     Password = request.Password,
                     UserAttributes = new List<AttributeType>
                     {
-                        new AttributeType { Name = "email", Value = request.Email }
+                        new AttributeType { Name = "email", Value = request.Email },
                     }
                 };
 
                 var response = await _cognitoClient.SignUpAsync(signUpRequest);
 
-                // Add to our database
+                var userName = GenerateTempUserName();
+
                 var user = new User
                 {
                     CognitoUserId = response.UserSub,
-                    UserName = request.UserName,
-                    DisplayName = request.DisplayName ?? request.UserName,
-                    Bio = request.Bio,
+                    Email = request.Email.ToLower().Trim(),
+                    UserName = userName,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -58,8 +61,14 @@ namespace ModerationSystem.Api.Services.Auth
 
                 return true;
             }
-            catch (Exception)
+            catch (UsernameExistsException ex)
             {
+                _logger.LogWarning(ex, "User already exists: {Email}", request.Email);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SignUp failed for {Email}", request.Email);
                 return false;
             }
         }
@@ -94,7 +103,7 @@ namespace ModerationSystem.Api.Services.Auth
                     ClientId = _clientId,
                     AuthParameters = new Dictionary<string, string>
                     {
-                        { "USERNAME", request.UserName },
+                        { "USERNAME", request.Email },
                         { "PASSWORD", request.Password }
                     }
                 };
@@ -156,10 +165,52 @@ namespace ModerationSystem.Api.Services.Auth
 
                 await _cognitoClient.GlobalSignOutAsync(logOutRequest);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Log error
+                _logger.LogError(ex, "Logout failed");
             }
+        }
+
+        public async Task<bool> ChangePasswordAsync(
+            string accessToken,
+            ChangePasswordRequestDto request)
+        {
+            try
+            {
+                await _cognitoClient.ChangePasswordAsync(new ChangePasswordRequest
+                {
+                    AccessToken = accessToken,
+                    PreviousPassword = request.CurrentPassword,
+                    ProposedPassword = request.NewPassword
+                });
+                return true;
+            }
+            catch (NotAuthorizedException ex)
+            {
+                _logger.LogWarning(ex, "Unauthorized password change attempt");
+                return false;
+            }
+            catch (InvalidPasswordException ex)
+            {
+                _logger.LogWarning(ex, "Invalid password provided");
+                return false;
+            }
+            catch (PasswordHistoryPolicyViolationException ex)
+            {
+                _logger.LogWarning(ex, "Password reuse attempt");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in ChangePassword");
+                return false;
+            }
+        }
+
+        private string GenerateTempUserName()
+        {
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            return $"user_{suffix}";
         }
     }
 }
