@@ -1,0 +1,44 @@
+import { isoMinus } from "@/lib/utils";
+
+export type PostStatus = "Pending" | "Published" | "Flagged" | "Review" | "Rejected";
+
+export type ReviewType =
+  | "InappropriateContent"
+  | "Spam"
+  | "Harassment"
+  | "HateSpeech"
+  | "Misinformation"
+  | "Other";
+
+export type Post = {
+  id: string;
+  userName: string;
+  userId: string;
+  createdAt: string;
+  content: string;
+  userAvatarUrl: string;
+  isLiked: boolean;
+  status: PostStatus;
+  likeCount: number;
+  commentCount: number;
+};
+
+export const mockPost: Post = {
+  id: "12313123",
+  userName: "Epstein",
+  userId: "EpsteinIslandBoy",
+  createdAt: isoMinus({
+    seconds: 60,
+    minutes: 60,
+    hours: 24,
+    days: 14,
+    years: 2,
+  }),
+  content: "I love my island",
+  userAvatarUrl:
+    "https://png.pngtree.com/png-clipart/20240830/original/pngtree-oberhasli-goat-png-image_15883761.png",
+  isLiked: false,
+  status: "Published",
+  likeCount: 42,
+  commentCount: 7,
+};

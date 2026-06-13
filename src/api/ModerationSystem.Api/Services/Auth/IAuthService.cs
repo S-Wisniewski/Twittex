@@ -9,5 +9,6 @@ namespace ModerationSystem.Api.Services.Auth
         Task<TokenResponse?> LogInAsync(LoginRequest request);
         Task<TokenResponse?> RefreshTokenAsync(string refreshToken);
         Task LogOutAsync(string accessToken);
+        Task<bool> ChangePasswordAsync(string accessToken, ChangePasswordRequestDto request);
     }
 }

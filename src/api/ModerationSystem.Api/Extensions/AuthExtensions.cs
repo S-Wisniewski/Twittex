@@ -16,6 +16,7 @@ namespace ModerationSystem.Api.Extensions
                     options.Authority = authority;
                     options.Audience = audience;
                     options.MapInboundClaims = false;
+                    options.SaveToken = true;
 
                     options.TokenValidationParameters = new TokenValidationParameters
                     {

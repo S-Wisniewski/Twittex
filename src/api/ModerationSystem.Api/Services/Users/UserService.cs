@@ -62,6 +62,7 @@ namespace ModerationSystem.Api.Services.Users
             if (request.UserName != null) user.UserName = request.UserName;
             if (request.DisplayName != null) user.DisplayName = request.DisplayName;
             if (request.Bio != null) user.Bio = request.Bio;
+            if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
 
             await _context.SaveChangesAsync();
 

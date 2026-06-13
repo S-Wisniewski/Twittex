@@ -22,6 +22,40 @@ namespace ModerationSystem.Api.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.CognitoUserId);
+
+                entity.Property(e => e.Email)
+                    .IsRequired()
+                    .HasMaxLength(254);
+                entity.HasIndex(e => e.Email)
+                    .HasDatabaseName("IX_User_Email");
+
+                entity.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(30);
+
+                entity.HasIndex(e => e.UserName)
+                    .IsUnique()
+                    .HasDatabaseName("UX_User_UserName");
+
+                entity.Property(e => e.DisplayName)
+                    .HasMaxLength(50);
+
+                entity.HasIndex(e => e.DisplayName)
+                    .HasDatabaseName("IX_User_DisplayName");
+
+                entity.Property(e => e.Bio)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.AvatarUrl)
+                    .HasMaxLength(2048);
+
+                entity.HasIndex(e => e.CreatedAt)
+                    .HasDatabaseName("IX_User_CreatedAt");
+            });
+
             modelBuilder.Entity<Post>(entity =>
             {
                 entity.HasQueryFilter(p => p.DeletedAt == null);
@@ -68,4 +102,3 @@ namespace ModerationSystem.Api.Data
         }
     }
 }
-

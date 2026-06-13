@@ -21,5 +21,3 @@ namespace ModerationSystem.Api.Models.Entities
         public string TriggeredBy { get; set; } = string.Empty;
     }
 }
-
-
