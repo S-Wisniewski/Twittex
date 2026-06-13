@@ -22,9 +22,11 @@ namespace ModerationSystem.Api.Services.Auth
         {
             _configuration = configuration;
             _context = context;
-            _clientId = _configuration["Cognito:ClientId"]!;
-            _cognitoClient = cognitoClient;
-            _logger = logger;
+            _clientId = _configuration["Cognito:Audience"]!;
+
+            var regionStr = _configuration["Cognito:Region"] ?? "eu-central-1";
+            var region = RegionEndpoint.GetBySystemName(regionStr);
+            _cognitoClient = new AmazonCognitoIdentityProviderClient(region);
         }
 
         public async Task<bool> SignUpAsync(Models.Dto.AuthDtos.SignUpRequest request)

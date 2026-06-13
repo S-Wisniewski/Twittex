@@ -22,8 +22,7 @@ namespace ModerationSystem.Api.Extensions
                     {
                         ValidateIssuer = true,
                         ValidIssuer = authority,
-                        ValidateAudience = true,
-                        ValidAudience = audience,
+                        ValidateAudience = false,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ClockSkew = TimeSpan.FromMinutes(2),
