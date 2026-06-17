@@ -11,12 +11,20 @@ namespace ModerationSystem.Api.Extensions
             {
                 appBuilder.Run(async context =>
                 {
-                    context.Response.ContentType = "application/json";
-                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
                     var exception = context.Features
                         .Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()
                         ?.Error;
+
+                    var (statusCode, message) = exception switch
+                    {
+                        UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized"),
+                        KeyNotFoundException => (HttpStatusCode.NotFound, "Resource not found"),
+                        ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
+                        _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred")
+                    };
+
+                    context.Response.ContentType = "application/json";
+                    context.Response.StatusCode = (int)statusCode;
 
                     var response = new
                     {

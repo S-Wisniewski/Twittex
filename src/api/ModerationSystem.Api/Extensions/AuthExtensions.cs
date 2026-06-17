@@ -16,12 +16,13 @@ namespace ModerationSystem.Api.Extensions
                     options.Authority = authority;
                     options.Audience = audience;
                     options.MapInboundClaims = false;
+                    options.SaveToken = true;
 
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
                         ValidIssuer = authority,
-                        ValidateAudience = true, // custom AudienceValidator below handles Cognito's client_id claim
+                        ValidateAudience = false,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ClockSkew = TimeSpan.FromMinutes(2),
