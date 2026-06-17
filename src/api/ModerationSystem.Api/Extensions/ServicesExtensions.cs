@@ -21,10 +21,11 @@ namespace ModerationSystem.Api.Extensions
 
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<IAuditService, AuditService>();
-            services.AddScoped<NotificationService>();
+            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAiService, AiService>();
+            services.AddCognitoClient(config);
 
             services.AddSignalR();
 

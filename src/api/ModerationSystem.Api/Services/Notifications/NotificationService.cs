@@ -4,7 +4,7 @@ using ModerationSystem.Api.Models.Entities;
 
 namespace ModerationSystem.Api.Services.Notifications
 {
-    public class NotificationService
+    public class NotificationService : INotificationService
     {
         private readonly IHubContext<NotificationHub> _hub;
         private readonly ILogger<NotificationService> _logger;
