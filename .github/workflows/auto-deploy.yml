@@ -32,8 +32,8 @@ jobs:
             VITE_API_URL=$VITE_API_URL
             EOF
 
-            sudo docker-compose down
-            sudo nohup docker-compose up -d --build > /tmp/deploy.log 2>&1
+            sudo docker-compose down --timeout 30 || true
+            sudo docker-compose up -d --build
             sudo docker image prune -f
         env:
           CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
