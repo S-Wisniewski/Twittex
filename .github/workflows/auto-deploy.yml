@@ -32,7 +32,8 @@ jobs:
             VITE_API_URL=$VITE_API_URL
             EOF
 
-            sudo docker-compose down --timeout 30 || true
+            sudo docker kill $(sudo docker ps -q) 2>/dev/null || true
+            sudo docker rm $(sudo docker ps -aq) 2>/dev/null || true
             sudo docker-compose up -d --build
             sudo docker image prune -f
         env:
