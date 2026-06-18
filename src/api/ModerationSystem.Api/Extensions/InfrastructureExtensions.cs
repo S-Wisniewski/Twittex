@@ -12,7 +12,10 @@ namespace ModerationSystem.Api.Extensions
                 {
                     var origins = configuration
                         .GetSection("Cors:AllowedOrigins")
-                        .Get<string[]>() ?? [];
+                        .Get<string[]>() ?? [
+                            "http://localhost:5173",
+                            "http://18.198.210.240:3000"
+                        ];
 
                     policy
                         .WithOrigins(origins)

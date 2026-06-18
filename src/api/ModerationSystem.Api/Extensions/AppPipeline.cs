@@ -53,7 +53,7 @@ namespace ModerationSystem.Api.Extensions
                     $">>> [Response] Status: {context.Response.StatusCode}\n");
             });
 
-            // app.UseCors();
+            app.UseCors();
             app.UseGlobalExceptionHandling();
 
             app.UseAuthentication();
