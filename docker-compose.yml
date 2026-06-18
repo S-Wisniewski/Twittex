@@ -21,7 +21,7 @@ services:
 
   web:
     build:
-      context: ./src/web/moderation-web
+      context: ./src/web
       dockerfile: Dockerfile
     ports:
       - "3000:80"
