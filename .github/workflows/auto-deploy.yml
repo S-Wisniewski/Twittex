@@ -17,12 +17,27 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 20m
+          envs: CONNECTION_STRING,COGNITO_AUTHORITY,COGNITO_AUDIENCE,COGNITO_REGION,VITE_API_URL
           script: |
             cd /home/ubuntu/Twittex
 
             git fetch origin main
             git reset --hard origin/main
 
+            cat > .env <<EOF
+            ConnectionStrings__DefaultConnection=$CONNECTION_STRING
+            Cognito__Authority=$COGNITO_AUTHORITY
+            Cognito__Audience=$COGNITO_AUDIENCE
+            Cognito__Region=$COGNITO_REGION
+            VITE_API_URL=$VITE_API_URL
+            EOF
+
             sudo docker-compose down
             sudo nohup docker-compose up -d --build > /tmp/deploy.log 2>&1
             sudo docker image prune -f
+        env:
+          CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+          COGNITO_AUTHORITY: ${{ secrets.COGNITO_AUTHORITY }}
+          COGNITO_AUDIENCE: ${{ secrets.COGNITO_AUDIENCE }}
+          COGNITO_REGION: ${{ secrets.COGNITO_REGION }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
