@@ -16,7 +16,7 @@ namespace ModerationSystem.Api.Services.Ai
         public AiService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _modelId = _configuration["Bedrock:ModelId"] ?? "eu.anthropic.claude-opus-4-6-v1";
+            _modelId = _configuration["Bedrock:ModelId"] ?? "eu.amazon.nova-pro-v1:0";
             
             var region = Amazon.RegionEndpoint.GetBySystemName(_configuration["Bedrock:Region"] ?? "eu-central-1");
             
@@ -40,12 +40,11 @@ namespace ModerationSystem.Api.Services.Ai
             {
                 var payload = new
                 {
-                    anthropic_version = "bedrock-2023-05-31",
-                    max_tokens = 50,
                     messages = new[]
                     {
-                        new { role = "user", content = $"Evaluate the following content and determine if it violates community guidelines. Respond with EXACTLY ONE WORD: 'Flagged' if it violates guidelines (e.g. hate speech, explicit content, harassment), or 'Published' if it is safe.\n\nContent:\n{content}" }
-                    }
+                        new { role = "user", content = new[] { new { text = $"Evaluate the following content and determine if it violates community guidelines. Respond with EXACTLY ONE WORD: 'Flagged' if it violates guidelines (e.g. hate speech, explicit content, harassment), or 'Published' if it is safe.\n\nContent:\n{content}" } } }
+                    },
+                    inferenceConfig = new { maxTokens = 50 }
                 };
 
                 string payloadJson = JsonSerializer.Serialize(payload);
@@ -64,7 +63,7 @@ namespace ModerationSystem.Api.Services.Ai
                 var responseBody = await reader.ReadToEndAsync();
 
                 using var document = JsonDocument.Parse(responseBody);
-                var text = document.RootElement.GetProperty("content")[0].GetProperty("text").GetString()?.Trim() ?? "";
+                var text = document.RootElement.GetProperty("output").GetProperty("message").GetProperty("content")[0].GetProperty("text").GetString()?.Trim() ?? "";
 
                 if (text.Contains("Flagged", StringComparison.OrdinalIgnoreCase))
                 {
@@ -87,12 +86,11 @@ namespace ModerationSystem.Api.Services.Ai
             {
                 var payload = new
                 {
-                    anthropic_version = "bedrock-2023-05-31",
-                    max_tokens = 50,
                     messages = new[]
                     {
-                        new { role = "user", content = $"Re-evaluate the following content based on community reports. If the content violates community guidelines, respond with EXACTLY ONE WORD: 'Flagged'. If the content is safe and reports are false alarms, respond with 'Published'.\n\nContent:\n{content}\n\nCommunity Reports Context:\n{reportContext}" }
-                    }
+                        new { role = "user", content = new[] { new { text = $"Re-evaluate the following content based on community reports. If the content violates community guidelines, respond with EXACTLY ONE WORD: 'Flagged'. If the content is safe and reports are false alarms, respond with 'Published'.\n\nContent:\n{content}\n\nCommunity Reports Context:\n{reportContext}" } } }
+                    },
+                    inferenceConfig = new { maxTokens = 50 }
                 };
 
                 string payloadJson = JsonSerializer.Serialize(payload);
@@ -111,7 +109,7 @@ namespace ModerationSystem.Api.Services.Ai
                 var responseBody = await reader.ReadToEndAsync();
 
                 using var document = JsonDocument.Parse(responseBody);
-                var text = document.RootElement.GetProperty("content")[0].GetProperty("text").GetString()?.Trim() ?? "";
+                var text = document.RootElement.GetProperty("output").GetProperty("message").GetProperty("content")[0].GetProperty("text").GetString()?.Trim() ?? "";
 
                 Console.WriteLine($"\n>>> [AiService RAW] {text}\n");
 
