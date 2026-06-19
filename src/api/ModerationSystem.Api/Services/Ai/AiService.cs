@@ -80,5 +80,53 @@ namespace ModerationSystem.Api.Services.Ai
                 return PostStatus.Error;
             }
         }
+
+        public async Task<PostStatus> ReevaluatePostAsync(string content, string reportContext)
+        {
+            try
+            {
+                var payload = new
+                {
+                    anthropic_version = "bedrock-2023-05-31",
+                    max_tokens = 50,
+                    messages = new[]
+                    {
+                        new { role = "user", content = $"Re-evaluate the following content based on community reports. If the content violates community guidelines, respond with EXACTLY ONE WORD: 'Flagged'. If the content is safe and reports are false alarms, respond with 'Published'.\n\nContent:\n{content}\n\nCommunity Reports Context:\n{reportContext}" }
+                    }
+                };
+
+                string payloadJson = JsonSerializer.Serialize(payload);
+                using var stream = new MemoryStream(Encoding.UTF8.GetBytes(payloadJson));
+
+                var request = new InvokeModelRequest
+                {
+                    ModelId = _modelId,
+                    ContentType = "application/json",
+                    Accept = "application/json",
+                    Body = stream
+                };
+
+                var response = await _bedrockClient.InvokeModelAsync(request);
+                using var reader = new StreamReader(response.Body);
+                var responseBody = await reader.ReadToEndAsync();
+
+                using var document = JsonDocument.Parse(responseBody);
+                var text = document.RootElement.GetProperty("content")[0].GetProperty("text").GetString()?.Trim() ?? "";
+
+                if (text.Contains("Flagged", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("\n>>> [AiService] Re-evaluation: Model evaluated content as Flagged.\n");
+                    return PostStatus.Flagged;
+                }
+
+                Console.WriteLine("\n>>> [AiService] Re-evaluation: Model evaluated content as Published.\n");
+                return PostStatus.Published;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n>>> [AiService] Error during re-evaluation: {ex.Message}\n");
+                return PostStatus.Error;
+            }
+        }
     }
 }
