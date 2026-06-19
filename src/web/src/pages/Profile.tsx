@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CalendarDaysIcon, CopyCheck } from "lucide-react";
 import { useParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +27,7 @@ function LivePost({ post, isAuthor }: { post: PostType; isAuthor: boolean }) {
 }
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { userName } = useParams<{ userName: string }>();
   const { currentUser } = useAuth();
   const gate = useAuthGate();
@@ -91,7 +93,7 @@ const Profile = () => {
   if (!user) {
     return (
       <div className="flex flex-col gap-8 p-8">
-        <p className="text-sm text-muted-foreground">Loading profile…</p>
+        <p className="text-sm text-muted-foreground">{t("profile.loadingProfile")}</p>
       </div>
     );
   }
@@ -120,7 +122,7 @@ const Profile = () => {
             </div>
             <div className="flex gap-2 items-center text-muted-foreground text-sm">
               <CalendarDaysIcon size={"16"} />
-              <span>Joined {formatDate(user.createdAt)}</span>
+              <span>{t("profile.joined", { date: formatDate(user.createdAt) })}</span>
             </div>
             {user.content && (
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">{user.content}</p>
@@ -135,14 +137,14 @@ const Profile = () => {
               onClick={() => setFollowList("following")}
             >
               <span className="font-bold">{user.following}</span>
-              <span className="text-muted-foreground">Following</span>
+              <span className="text-muted-foreground">{t("common.following")}</span>
             </button>
             <button
               className="flex gap-1 hover:underline cursor-pointer"
               onClick={() => setFollowList("followers")}
             >
               <span className="font-bold">{user.followers}</span>
-              <span className="text-muted-foreground">Followers</span>
+              <span className="text-muted-foreground">{t("common.followers")}</span>
             </button>
           </div>
 
@@ -150,10 +152,10 @@ const Profile = () => {
             <SmallDialog
               triggerButton={
                 <Button variant={"secondary"} className={"w-full"}>
-                  Following
+                  {t("common.following")}
                 </Button>
               }
-              title={`Unfollow @${user.userName}`}
+              title={t("profile.unfollow", { userName: user.userName })}
               body={
                 <UserAvatar
                   url={user.userAvatarUrl}
@@ -163,13 +165,13 @@ const Profile = () => {
               }
               secondButton={
                 <Button variant={"destructive"} onClick={handleFollow}>
-                  Unfollow
+                  {t("common.unfollow")}
                 </Button>
               }
             />
           ) : (
             <Button className={"w-full"} onClick={handleFollow}>
-              Follow
+              {t("common.follow")}
             </Button>
           )}
         </div>
@@ -189,20 +191,20 @@ const Profile = () => {
             value="posts"
             className="flex-1 rounded-full border border-border data-active:bg-primary data-active:text-primary-foreground data-active:border-primary"
           >
-            Posts
+            {t("profile.posts")}
           </TabsTrigger>
           <TabsTrigger
             value="replies"
             className="flex-1 rounded-full border border-border data-active:bg-primary data-active:text-primary-foreground data-active:border-primary"
           >
-            Replies
+            {t("profile.replies")}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="posts">
           {isOwnProfile && posts.length > 0 && (
             <p className="text-sm text-muted-foreground mb-4">
-              Active posts auto-refresh every 5s until a terminal status is reached.
+              {t("profile.autoRefresh")}
             </p>
           )}
           <div className="flex flex-col gap-4 mt-4">
@@ -227,7 +229,7 @@ const Profile = () => {
             ))}
             {replyThreads.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">
-                No replies yet.
+                {t("profile.noReplies")}
               </p>
             )}
           </div>

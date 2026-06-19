@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PostStatus } from "@/types/Post";
@@ -22,11 +23,6 @@ const STATUS_DOT: Record<PostStatus, string> = {
   Error: "bg-destructive",
 };
 
-const TRIGGER_LABEL: Record<TimelineEvent["triggeredBy"], string> = {
-  system: "System",
-  community: "Community reports",
-};
-
 function formatSmartDate(iso: string) {
   const date = new Date(iso);
   const now = new Date();
@@ -47,6 +43,7 @@ type PostTimelineProps = {
 };
 
 const PostTimeline = ({ events, className }: PostTimelineProps) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (!events.length) return null;
@@ -60,19 +57,17 @@ const PostTimeline = ({ events, className }: PostTimelineProps) => {
         onClick={() => setExpanded((p) => !p)}
       >
         {expanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-        Status history
+        {t("postTimeline.title")}
       </Button>
 
       {expanded && (
         <ol className="mt-2 flex flex-col gap-0 pl-1">
           {events.map((event, i) => (
             <li key={event.id} className="flex gap-3 relative">
-              {/* vertical line */}
               {i < events.length - 1 && (
                 <div className="absolute left-1.75 top-4 bottom-0 w-px bg-border" />
               )}
 
-              {/* dot */}
               <div
                 className={cn(
                   "relative z-10 mt-1 size-3.5 shrink-0 rounded-full border-2 border-background ring-1 ring-border",
@@ -82,16 +77,21 @@ const PostTimeline = ({ events, className }: PostTimelineProps) => {
 
               <div className="flex flex-col pb-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-medium">{event.newStatus}</span>
+                  <span className="text-xs font-medium">{t(`postStatus.${event.newStatus}`)}</span>
                   <span className="text-xs text-muted-foreground">
-                    via {TRIGGER_LABEL[event.triggeredBy]}
+                    {t("postTimeline.via", { trigger: t(`notifications.triggers.${event.triggeredBy}`) })}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     · {formatSmartDate(event.createdAt)}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                  {event.reason}
+                  {t(`notifications.reasons.${
+                    event.newStatus === "Flagged" ? "flagged"
+                    : event.newStatus === "Rejected" ? "rejected"
+                    : event.newStatus === "Error" ? "error"
+                    : "default"
+                  }`)}
                 </p>
               </div>
             </li>

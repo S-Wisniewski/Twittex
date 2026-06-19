@@ -1,0 +1,246 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "delete": "Delete",
+    "follow": "Follow",
+    "following": "Following",
+    "followers": "Followers",
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "reply": "Reply",
+    "post": "Post",
+    "search": "Search",
+    "unfollow": "Unfollow"
+  },
+  "auth": {
+    "tagline": "Community-moderated social platform",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signingIn": "Signing in…",
+    "creatingAccount": "Creating account…",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "••••••••",
+    "usernamePlaceholder": "your_username",
+    "forgotPassword": "Forgot password?",
+    "terms": "By continuing you agree to our",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "errors": {
+      "emailRequired": "Email is required.",
+      "passwordRequired": "Password is required.",
+      "invalidCredentials": "Invalid email or password.",
+      "usernameRequired": "Username is required.",
+      "usernameInvalid": "Only letters, numbers and underscores.",
+      "passwordTooShort": "At least 8 characters.",
+      "confirmPasswordRequired": "Please confirm your password.",
+      "passwordMismatch": "Passwords do not match.",
+      "registrationFailed": "Registration failed. Please try again."
+    }
+  },
+  "confirmEmail": {
+    "title": "Confirm your email",
+    "sent": "We sent a verification code to",
+    "yourEmail": "your email address",
+    "instruction": "Enter it below to activate your account.",
+    "label": "Confirmation code",
+    "placeholder": "123456",
+    "verifying": "Verifying…",
+    "verify": "Verify email",
+    "alreadyVerified": "Already verified?",
+    "errors": {
+      "codeRequired": "Please enter the confirmation code.",
+      "invalidCode": "Invalid or expired code. Please try again."
+    }
+  },
+  "onboarding": {
+    "title": "Set up your profile",
+    "subtitle": "Almost there! Add a display name so others can find you.",
+    "displayNameLabel": "Display name",
+    "displayNamePlaceholder": "Your Name",
+    "continue": "Continue",
+    "errors": {
+      "displayNameRequired": "Display name is required.",
+      "saveFailed": "Failed to save profile. Please try again."
+    }
+  },
+  "profile": {
+    "loadingProfile": "Loading profile…",
+    "joined": "Joined {{date}}",
+    "unfollow": "Unfollow @{{userName}}",
+    "autoRefresh": "Active posts auto-refresh every 5s until a terminal status is reached.",
+    "posts": "Posts",
+    "replies": "Replies",
+    "noReplies": "No replies yet."
+  },
+  "postPage": {
+    "comment_one": "comment",
+    "comment_other": "comments",
+    "replyFailed": "Failed to post reply."
+  },
+  "search": {
+    "placeholder": "Search",
+    "empty": "Search for users"
+  },
+  "compose": {
+    "newPost": "New post",
+    "replyTo": "Reply to {{name}}",
+    "replyingTo": "Replying to @{{name}}…",
+    "whatsHappening": "What's happening?"
+  },
+  "post": {
+    "statusPending": "Pending automated review",
+    "statusFlagged": "Reported by the community — pending re-review",
+    "statusRejected": "Removed — policy violation",
+    "statusError": "Moderation error — will be reviewed",
+    "reportReasons": {
+      "inappropriate": "Inappropriate content",
+      "spam": "Spam",
+      "harassment": "Harassment",
+      "hate": "Hate speech",
+      "misinfo": "Misinformation",
+      "other": "Other"
+    },
+    "deleteTitle": "Delete post?",
+    "deleteBody": "This action cannot be undone.",
+    "reportTitle": "Report this post",
+    "reportBody": "Select a reason and optionally describe the issue.",
+    "reportDetailsPlaceholder": "Additional details (optional)",
+    "report": "Report",
+    "toasts": {
+      "deleted": "Post deleted",
+      "deleteFailed": "Failed to delete post. Please try again.",
+      "reported": "Post reported",
+      "reportedDesc": "Reason: {{type}}. Our team will review it shortly.",
+      "reportFailed": "Failed to submit report. Please try again."
+    }
+  },
+  "postStatus": {
+    "Published": "Published",
+    "Pending": "Pending",
+    "Flagged": "Flagged",
+    "Review": "Under review",
+    "Rejected": "Rejected",
+    "Error": "Error"
+  },
+  "postTimeline": {
+    "title": "Status history",
+    "via": "via {{trigger}}"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "triggers": {
+      "system": "System",
+      "community": "Community reports"
+    },
+    "toasts": {
+      "published": "Post published",
+      "rejected": "Post rejected",
+      "error": "Moderation error — your post will be reviewed manually",
+      "flagged": "Your post has been flagged for re-review"
+    },
+    "reasons": {
+      "flagged": "Your post was reported by the community and is pending re-review.",
+      "rejected": "Your post was rejected by automated content moderation for policy violations.",
+      "error": "Automated moderation could not process this post. It will be reviewed manually.",
+      "default": "Your post is awaiting automated review."
+    }
+  },
+  "followList": {
+    "title": "Connections",
+    "emptyFollowing": "Not following anyone yet.",
+    "emptyFollowers": "No followers yet."
+  },
+  "avatar": {
+    "cropTitle": "Crop your photo",
+    "zoom": "Zoom",
+    "savePhoto": "Save photo",
+    "uploadPhoto": "Upload photo",
+    "uploadHint": "Upload a photo. It will be cropped to a square.",
+    "label": "Avatar",
+    "toasts": {
+      "updated": "Avatar updated",
+      "failed": "Failed to upload avatar. Please try again."
+    }
+  },
+  "searchModal": {
+    "placeholder": "Search users…",
+    "clear": "Clear",
+    "noResults": "No users found",
+    "startTyping": "Start typing to search"
+  },
+  "sidebar": {
+    "home": "Home",
+    "search": "Search",
+    "newPost": "New post",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "toasts": {
+      "postSubmitted": "Post submitted",
+      "postPending": "Your post is pending review.",
+      "postFailed": "Failed to create post. Please try again."
+    }
+  },
+  "navUser": {
+    "viewProfile": "View profile",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "logOut": "Log out"
+  },
+  "settings": {
+    "tabs": {
+      "general": "General",
+      "profile": "Profile",
+      "security": "Security"
+    },
+    "general": {
+      "title": "General",
+      "subtitle": "App preferences and display settings.",
+      "theme": "Theme",
+      "themeDesc": "Switch between light and dark mode.",
+      "language": "Language",
+      "languageDesc": "Display language for the interface.",
+      "languages": {
+        "en": "English",
+        "pl": "Polish",
+        "de": "German",
+        "fr": "French"
+      }
+    },
+    "profile": {
+      "title": "Profile",
+      "subtitle": "Manage your public information.",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Your name",
+      "username": "Username",
+      "usernamePlaceholder": "username",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell the world something about yourself",
+      "toasts": {
+        "saved": "Profile saved",
+        "saveFailed": "Failed to save profile. Please try again."
+      }
+    },
+    "security": {
+      "title": "Security",
+      "subtitle": "Manage your password and account security.",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "passwordMismatch": "Passwords do not match.",
+      "updatePassword": "Update password",
+      "dangerZone": "Danger zone",
+      "deleteAccount": "Delete account",
+      "deleteAccountDesc": "Permanently delete your account and all data.",
+      "toasts": {
+        "passwordUpdated": "Password updated",
+        "passwordFailed": "Failed to update password. Please try again.",
+        "deleteFailed": "Failed to delete account. Please try again."
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Bell, Home, LogOut, Pencil, Search, Settings as SettingsIcon } from "lucide-react";
 import { useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { postsApi } from "@/api/posts";
 import type { Post } from "@/types/Post";
 
@@ -28,6 +29,7 @@ import { toast } from "sonner";
 export const AppSidebar = ({
   ...props
 }: React.ComponentProps<typeof Sidebar>) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentUser, isLoading, logout } = useAuth();
   const queryClient = useQueryClient();
@@ -39,7 +41,6 @@ export const AppSidebar = ({
   const createPostMutation = useMutation({
     mutationFn: (content: string) => postsApi.create({ content }),
     onSuccess: (newPost) => {
-      // Prepend into cache so SignalR can update it before the refetch lands
       queryClient.setQueriesData<InfiniteData<Post[]>>(
         { queryKey: ["feed"] },
         (old) => {
@@ -48,10 +49,10 @@ export const AppSidebar = ({
         },
       );
       queryClient.invalidateQueries({ queryKey: ["feed"] });
-      toast.success("Post submitted", { description: "Your post is pending review." });
+      toast.success(t("sidebar.toasts.postSubmitted"), { description: t("sidebar.toasts.postPending") });
       navigate("/");
     },
-    onError: () => toast.error("Failed to create post. Please try again."),
+    onError: () => toast.error(t("sidebar.toasts.postFailed")),
   });
 
   const handleNewPost = (content: string) => {
@@ -87,32 +88,30 @@ export const AppSidebar = ({
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Primary nav */}
         <SidebarGroup>
           <SidebarMenu className="gap-1">
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => navigate("/", { replace: true })}>
                 <Home />
-                <span>Home</span>
+                <span>{t("sidebar.home")}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => setIsSearchOpen(true)}>
                 <Search />
-                <span>Search</span>
+                <span>{t("sidebar.search")}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* New post — authenticated only */}
         {currentUser && (
           <SidebarGroup>
             <ComposePostDialog
               trigger={
                 <Button className="w-full gap-2">
                   <Pencil />
-                  New post
+                  {t("sidebar.newPost")}
                 </Button>
               }
               userName={currentUser.userName}
@@ -122,19 +121,18 @@ export const AppSidebar = ({
           </SidebarGroup>
         )}
 
-        {/* Secondary nav — pushed to bottom of scrollable area */}
         <SidebarGroup className="mt-auto">
           <SidebarMenu className="gap-1">
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => currentUser ? setIsNotificationsOpen(true) : navigate("/login")}>
                 <Bell />
-                <span>Notifications</span>
+                <span>{t("sidebar.notifications")}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton onClick={() => currentUser ? setIsSettingsOpen(true) : navigate("/login")}>
                 <SettingsIcon />
-                <span>Settings</span>
+                <span>{t("sidebar.settings")}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -165,7 +163,7 @@ export const AppSidebar = ({
                 size="icon-sm"
                 className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={handleLogout}
-                title="Log out"
+                title={t("navUser.logOut")}
               >
                 <LogOut className="size-4" />
               </Button>
@@ -173,17 +171,16 @@ export const AppSidebar = ({
           ) : (
             <div className="flex flex-col gap-2 p-2">
               <Button className="w-full" onClick={() => navigate("/login")}>
-                Sign in
+                {t("sidebar.signIn")}
               </Button>
               <Button variant="outline" className="w-full" onClick={() => navigate("/login?tab=signup")}>
-                Create account
+                {t("sidebar.createAccount")}
               </Button>
             </div>
           )
         )}
       </SidebarFooter>
 
-      {/* Modals / sheets */}
       <SearchModal open={isSearchOpen} onOpenChange={setIsSearchOpen} />
       <NotificationsSheet open={isNotificationsOpen} onOpenChange={setIsNotificationsOpen} />
       <Settings isOpen={isSettingsOpen} setIsOpen={setIsSettingsOpen} />

@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
 };
 
 const AvatarCropDialog = ({ imageSrc, open, onClose, onSave }: Props) => {
+  const { t } = useTranslation();
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -37,7 +39,7 @@ const AvatarCropDialog = ({ imageSrc, open, onClose, onSave }: Props) => {
       const blob = await getCroppedImg(imageSrc, croppedAreaPixels);
       await onSave(blob);
     } catch {
-      toast.error("Failed to upload avatar. Please try again.");
+      toast.error(t("avatar.toasts.failed"));
     } finally {
       setSaving(false);
     }
@@ -47,7 +49,7 @@ const AvatarCropDialog = ({ imageSrc, open, onClose, onSave }: Props) => {
     <Dialog open={open} onOpenChange={(o) => { if (!o && !saving) onClose(); }}>
       <DialogContent showCloseButton={false} className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">Crop your photo</DialogTitle>
+          <DialogTitle className="text-center">{t("avatar.cropTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="relative w-full h-72 rounded-xl overflow-hidden bg-muted">
@@ -65,7 +67,7 @@ const AvatarCropDialog = ({ imageSrc, open, onClose, onSave }: Props) => {
         </div>
 
         <div className="flex items-center gap-3 px-1">
-          <span className="text-xs text-muted-foreground shrink-0">Zoom</span>
+          <span className="text-xs text-muted-foreground shrink-0">{t("avatar.zoom")}</span>
           <input
             type="range"
             min={1}
@@ -78,9 +80,9 @@ const AvatarCropDialog = ({ imageSrc, open, onClose, onSave }: Props) => {
         </div>
 
         <DialogFooter className="flex items-center justify-center! gap-4">
-          <DialogClose render={<Button variant="outline" disabled={saving}>Cancel</Button>} />
+          <DialogClose render={<Button variant="outline" disabled={saving}>{t("common.cancel")}</Button>} />
           <Button onClick={handleSave} disabled={saving || !croppedAreaPixels}>
-            {saving ? "Saving…" : "Save photo"}
+            {saving ? t("common.saving") : t("avatar.savePhoto")}
           </Button>
         </DialogFooter>
       </DialogContent>

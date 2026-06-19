@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserAvatar from "@/components/UserAvatar";
@@ -18,7 +19,8 @@ function UserList({ users, isLoading, empty, onClose }: {
   empty: string;
   onClose: () => void;
 }) {
-  if (isLoading) return <p className="text-sm text-muted-foreground text-center py-8">Loading…</p>;
+  const { t } = useTranslation();
+  if (isLoading) return <p className="text-sm text-muted-foreground text-center py-8">{t("common.loading")}</p>;
   if (users.length === 0) return <p className="text-sm text-muted-foreground text-center py-8">{empty}</p>;
   return (
     <ul className="divide-y">
@@ -44,6 +46,8 @@ function UserList({ users, isLoading, empty, onClose }: {
 }
 
 const FollowListDialog = ({ userId, defaultTab, onClose }: Props) => {
+  const { t } = useTranslation();
+
   const { data: followers = [], isLoading: loadingFollowers } = useQuery({
     queryKey: ["users", userId, "followers"],
     queryFn: () => usersApi.getFollowers(userId),
@@ -60,21 +64,21 @@ const FollowListDialog = ({ userId, defaultTab, onClose }: Props) => {
     <Dialog open={!!defaultTab} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-sm p-0 overflow-hidden">
         <DialogHeader className="px-5 pt-5 pb-0">
-          <DialogTitle>Connections</DialogTitle>
+          <DialogTitle>{t("followList.title")}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue={defaultTab ?? "followers"} key={defaultTab ?? ""}>
           <TabsList variant="line" className="w-full justify-start px-5 border-b pb-0">
-            <TabsTrigger value="following">Following</TabsTrigger>
-            <TabsTrigger value="followers">Followers</TabsTrigger>
+            <TabsTrigger value="following">{t("common.following")}</TabsTrigger>
+            <TabsTrigger value="followers">{t("common.followers")}</TabsTrigger>
           </TabsList>
 
           <div className="h-80 overflow-y-auto">
             <TabsContent value="following" className="mt-0">
-              <UserList users={following} isLoading={loadingFollowing} empty="Not following anyone yet." onClose={onClose} />
+              <UserList users={following} isLoading={loadingFollowing} empty={t("followList.emptyFollowing")} onClose={onClose} />
             </TabsContent>
             <TabsContent value="followers" className="mt-0">
-              <UserList users={followers} isLoading={loadingFollowers} empty="No followers yet." onClose={onClose} />
+              <UserList users={followers} isLoading={loadingFollowers} empty={t("followList.emptyFollowers")} onClose={onClose} />
             </TabsContent>
           </div>
         </Tabs>

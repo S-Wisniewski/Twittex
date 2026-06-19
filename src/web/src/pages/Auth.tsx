@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { authApi } from "@/api/auth";
@@ -16,6 +18,7 @@ type FormError = Partial<{
 }>;
 
 const Auth = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
@@ -37,8 +40,8 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: FormError = {};
-    if (!signInEmail) errors.email = "Email is required.";
-    if (!signInPassword) errors.password = "Password is required.";
+    if (!signInEmail) errors.email = t("auth.errors.emailRequired");
+    if (!signInPassword) errors.password = t("auth.errors.passwordRequired");
     if (Object.keys(errors).length) {
       setSignInErrors(errors);
       return;
@@ -58,7 +61,7 @@ const Auth = () => {
         navigate("/");
       }
     } catch {
-      setSignInErrors({ general: "Invalid email or password." });
+      setSignInErrors({ general: t("auth.errors.invalidCredentials") });
     } finally {
       setSignInLoading(false);
     }
@@ -67,17 +70,17 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors: FormError = {};
-    if (!signUpEmail) errors.email = "Email is required.";
-    if (!signUpUsername) errors.username = "Username is required.";
+    if (!signUpEmail) errors.email = t("auth.errors.emailRequired");
+    if (!signUpUsername) errors.username = t("auth.errors.usernameRequired");
     else if (!/^[a-z0-9_.]+$/i.test(signUpUsername))
-      errors.username = "Only letters, numbers and underscores.";
-    if (!signUpPassword) errors.password = "Password is required.";
+      errors.username = t("auth.errors.usernameInvalid");
+    if (!signUpPassword) errors.password = t("auth.errors.passwordRequired");
     else if (signUpPassword.length < 8)
-      errors.password = "At least 8 characters.";
+      errors.password = t("auth.errors.passwordTooShort");
     if (!signUpConfirm)
-      errors.confirmPassword = "Please confirm your password.";
+      errors.confirmPassword = t("auth.errors.confirmPasswordRequired");
     else if (signUpPassword !== signUpConfirm)
-      errors.confirmPassword = "Passwords do not match.";
+      errors.confirmPassword = t("auth.errors.passwordMismatch");
     if (Object.keys(errors).length) {
       setSignUpErrors(errors);
       return;
@@ -94,7 +97,7 @@ const Auth = () => {
       sessionStorage.setItem("pendingConfirmEmail", signUpEmail);
       navigate("/confirm-email", { state: { email: signUpEmail } });
     } catch {
-      setSignUpErrors({ general: "Registration failed. Please try again." });
+      setSignUpErrors({ general: t("auth.errors.registrationFailed") });
     } finally {
       setSignUpLoading(false);
     }
@@ -109,7 +112,7 @@ const Auth = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight">Twittex</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Community-moderated social platform
+              {t("auth.tagline")}
             </p>
           </div>
         </div>
@@ -119,10 +122,10 @@ const Auth = () => {
           <Tabs defaultValue={searchParams.get("tab") === "signup" ? "signup" : "signin"}>
             <TabsList className="w-full mb-6">
               <TabsTrigger value="signin" className="flex-1">
-                Sign in
+                {t("auth.signIn")}
               </TabsTrigger>
               <TabsTrigger value="signup" className="flex-1">
-                Sign up
+                {t("auth.signUp")}
               </TabsTrigger>
             </TabsList>
 
@@ -143,7 +146,7 @@ const Auth = () => {
                   <label className="text-sm font-medium">Email</label>
                   <Input
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={t("auth.emailPlaceholder")}
                     value={signInEmail}
                     onChange={(e) => setSignInEmail(e.target.value)}
                     aria-invalid={!!signInErrors.email}
@@ -166,12 +169,11 @@ const Auth = () => {
                         /* TODO: navigate to forgot password */
                       }}
                     >
-                      Forgot password?
+                      {t("auth.forgotPassword")}
                     </button>
                   </div>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
+                  <PasswordInput
+                    placeholder={t("auth.passwordPlaceholder")}
                     value={signInPassword}
                     onChange={(e) => setSignInPassword(e.target.value)}
                     aria-invalid={!!signInErrors.password}
@@ -189,7 +191,7 @@ const Auth = () => {
                   className="w-full mt-2"
                   disabled={signInLoading}
                 >
-                  {signInLoading ? "Signing in…" : "Sign in"}
+                  {signInLoading ? t("auth.signingIn") : t("auth.signIn")}
                 </Button>
               </form>
             </TabsContent>
@@ -211,7 +213,7 @@ const Auth = () => {
                   <label className="text-sm font-medium">Email</label>
                   <Input
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={t("auth.emailPlaceholder")}
                     value={signUpEmail}
                     onChange={(e) => setSignUpEmail(e.target.value)}
                     aria-invalid={!!signUpErrors.email}
@@ -231,7 +233,7 @@ const Auth = () => {
                       @
                     </span>
                     <Input
-                      placeholder="your_username"
+                      placeholder={t("auth.usernamePlaceholder")}
                       value={signUpUsername}
                       onChange={(e) =>
                         setSignUpUsername(
@@ -252,9 +254,8 @@ const Auth = () => {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium">Password</label>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
+                  <PasswordInput
+                    placeholder={t("auth.passwordPlaceholder")}
                     value={signUpPassword}
                     onChange={(e) => setSignUpPassword(e.target.value)}
                     aria-invalid={!!signUpErrors.password}
@@ -271,9 +272,8 @@ const Auth = () => {
                   <label className="text-sm font-medium">
                     Confirm password
                   </label>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
+                  <PasswordInput
+                    placeholder={t("auth.passwordPlaceholder")}
                     value={signUpConfirm}
                     onChange={(e) => setSignUpConfirm(e.target.value)}
                     aria-invalid={!!signUpErrors.confirmPassword}
@@ -291,7 +291,7 @@ const Auth = () => {
                   className="w-full mt-2"
                   disabled={signUpLoading}
                 >
-                  {signUpLoading ? "Creating account…" : "Create account"}
+                  {signUpLoading ? t("auth.creatingAccount") : t("auth.signUp")}
                 </Button>
               </form>
             </TabsContent>
@@ -300,13 +300,13 @@ const Auth = () => {
           <div className="mt-6">
             <Separator className="mb-4" />
             <p className="text-xs text-center text-muted-foreground">
-              By continuing you agree to our{" "}
+              {t("auth.terms")}{" "}
               <span className="underline cursor-pointer hover:text-foreground transition-colors">
-                Terms of Service
+                {t("auth.termsOfService")}
               </span>{" "}
               and{" "}
               <span className="underline cursor-pointer hover:text-foreground transition-colors">
-                Privacy Policy
+                {t("auth.privacyPolicy")}
               </span>
               .
             </p>

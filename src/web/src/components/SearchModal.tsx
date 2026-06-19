@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import {
   Dialog,
@@ -25,6 +26,7 @@ type SearchModalProps = {
 };
 
 const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const gate = useAuthGate();
   const [query, setQuery] = useState("");
@@ -56,17 +58,16 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
       <DialogContent showCloseButton={false} className="max-w-md p-0 gap-0 overflow-hidden">
         <DialogHeader className="sr-only">
-          <DialogTitle>Search</DialogTitle>
+          <DialogTitle>{t("common.search")}</DialogTitle>
         </DialogHeader>
 
-        {/* Search input */}
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
           <input
             autoFocus
             value={query}
             onChange={handleChange}
-            placeholder="Search users…"
+            placeholder={t("searchModal.placeholder")}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
           {query && (
@@ -74,12 +75,11 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
               onClick={() => { setQuery(""); setUsers([]); }}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              Clear
+              {t("searchModal.clear")}
             </button>
           )}
         </div>
 
-        {/* Results */}
         <div className="max-h-80 overflow-y-auto">
           {users.length > 0 ? (
             <ul className="divide-y">
@@ -105,7 +105,7 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
                           gate(() => usersApi.follow(user.id));
                         }}
                       >
-                        Follow
+                        {t("common.follow")}
                       </Button>
                     </ItemActions>
                   </Item>
@@ -114,7 +114,7 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
             </ul>
           ) : (
             <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-              {query ? "No users found" : "Start typing to search"}
+              {query ? t("searchModal.noResults") : t("searchModal.startTyping")}
             </div>
           )}
         </div>

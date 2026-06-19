@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
@@ -19,6 +20,7 @@ import { useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router";
 
 const Search = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const gate = useAuthGate();
   const [users, setUsers] = useState<User[]>([]);
@@ -38,7 +40,7 @@ const Search = () => {
   return (
     <div className="flex flex-col gap-4 h-full">
       <InputGroup>
-        <InputGroupInput placeholder="Search" onChange={handleSearch} />
+        <InputGroupInput placeholder={t("search.placeholder")} onChange={handleSearch} />
         <InputGroupAddon>
           <SearchIcon />
         </InputGroupAddon>
@@ -66,7 +68,7 @@ const Search = () => {
                     gate(() => usersApi.follow(user.id));
                   }}
                 >
-                  Follow
+                  {t("common.follow")}
                 </Button>
               </ItemActions>
             </Item>
@@ -74,7 +76,7 @@ const Search = () => {
         </div>
       ) : (
         <div className="h-full flex items-center justify-center">
-          Search for users
+          {t("search.empty")}
         </div>
       )}
     </div>

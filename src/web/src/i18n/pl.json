@@ -1,0 +1,246 @@
+{
+  "common": {
+    "cancel": "Anuluj",
+    "save": "Zapisz zmiany",
+    "delete": "Usuń",
+    "follow": "Obserwuj",
+    "following": "Obserwowani",
+    "followers": "Obserwujący",
+    "loading": "Ładowanie…",
+    "saving": "Zapisywanie…",
+    "reply": "Odpowiedz",
+    "post": "Opublikuj",
+    "search": "Szukaj",
+    "unfollow": "Przestań obserwować"
+  },
+  "auth": {
+    "tagline": "Platforma społecznościowa z moderacją społeczności",
+    "signIn": "Zaloguj się",
+    "signUp": "Zarejestruj się",
+    "signingIn": "Logowanie…",
+    "creatingAccount": "Tworzenie konta…",
+    "emailPlaceholder": "ty@przykład.pl",
+    "passwordPlaceholder": "••••••••",
+    "usernamePlaceholder": "twoja_nazwa",
+    "forgotPassword": "Nie pamiętasz hasła?",
+    "terms": "Kontynuując, akceptujesz nasze",
+    "termsOfService": "Warunki korzystania",
+    "privacyPolicy": "Politykę prywatności",
+    "errors": {
+      "emailRequired": "E-mail jest wymagany.",
+      "passwordRequired": "Hasło jest wymagane.",
+      "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+      "usernameRequired": "Nazwa użytkownika jest wymagana.",
+      "usernameInvalid": "Tylko litery, cyfry i podkreślniki.",
+      "passwordTooShort": "Co najmniej 8 znaków.",
+      "confirmPasswordRequired": "Potwierdź hasło.",
+      "passwordMismatch": "Hasła nie są zgodne.",
+      "registrationFailed": "Rejestracja nie powiodła się. Spróbuj ponownie."
+    }
+  },
+  "confirmEmail": {
+    "title": "Potwierdź swój e-mail",
+    "sent": "Wysłaliśmy kod weryfikacyjny na",
+    "yourEmail": "Twój adres e-mail",
+    "instruction": "Wpisz go poniżej, aby aktywować konto.",
+    "label": "Kod potwierdzający",
+    "placeholder": "123456",
+    "verifying": "Weryfikowanie…",
+    "verify": "Zweryfikuj e-mail",
+    "alreadyVerified": "Już zweryfikowano?",
+    "errors": {
+      "codeRequired": "Wpisz kod potwierdzający.",
+      "invalidCode": "Nieprawidłowy lub wygasły kod. Spróbuj ponownie."
+    }
+  },
+  "onboarding": {
+    "title": "Skonfiguruj swój profil",
+    "subtitle": "Prawie gotowe! Dodaj nazwę wyświetlaną, aby inni mogli Cię znaleźć.",
+    "displayNameLabel": "Nazwa wyświetlana",
+    "displayNamePlaceholder": "Twoje Imię",
+    "continue": "Kontynuuj",
+    "errors": {
+      "displayNameRequired": "Nazwa wyświetlana jest wymagana.",
+      "saveFailed": "Nie udało się zapisać profilu. Spróbuj ponownie."
+    }
+  },
+  "profile": {
+    "loadingProfile": "Ładowanie profilu…",
+    "joined": "Dołączył(a) {{date}}",
+    "unfollow": "Przestań obserwować @{{userName}}",
+    "autoRefresh": "Aktywne posty odświeżają się co 5s do osiągnięcia statusu końcowego.",
+    "posts": "Posty",
+    "replies": "Odpowiedzi",
+    "noReplies": "Brak odpowiedzi."
+  },
+  "postPage": {
+    "comment_one": "komentarz",
+    "comment_other": "komentarze",
+    "replyFailed": "Nie udało się opublikować odpowiedzi."
+  },
+  "search": {
+    "placeholder": "Szukaj",
+    "empty": "Szukaj użytkowników"
+  },
+  "compose": {
+    "newPost": "Nowy post",
+    "replyTo": "Odpowiedź dla {{name}}",
+    "replyingTo": "Odpowiadasz @{{name}}…",
+    "whatsHappening": "Co się dzieje?"
+  },
+  "post": {
+    "statusPending": "Oczekuje na automatyczną moderację",
+    "statusFlagged": "Zgłoszony przez społeczność — oczekuje na ponowną weryfikację",
+    "statusRejected": "Usunięty — naruszenie zasad",
+    "statusError": "Błąd moderacji — zostanie sprawdzony ręcznie",
+    "reportReasons": {
+      "inappropriate": "Nieodpowiednia treść",
+      "spam": "Spam",
+      "harassment": "Nękanie",
+      "hate": "Mowa nienawiści",
+      "misinfo": "Dezinformacja",
+      "other": "Inne"
+    },
+    "deleteTitle": "Usunąć post?",
+    "deleteBody": "Tej operacji nie można cofnąć.",
+    "reportTitle": "Zgłoś ten post",
+    "reportBody": "Wybierz powód i opcjonalnie opisz problem.",
+    "reportDetailsPlaceholder": "Dodatkowe szczegóły (opcjonalnie)",
+    "report": "Zgłoś",
+    "toasts": {
+      "deleted": "Post usunięty",
+      "deleteFailed": "Nie udało się usunąć postu. Spróbuj ponownie.",
+      "reported": "Post zgłoszony",
+      "reportedDesc": "Powód: {{type}}. Nasz zespół wkrótce to sprawdzi.",
+      "reportFailed": "Nie udało się przesłać zgłoszenia. Spróbuj ponownie."
+    }
+  },
+  "postStatus": {
+    "Published": "Opublikowany",
+    "Pending": "Oczekujący",
+    "Flagged": "Oznaczony",
+    "Review": "W trakcie weryfikacji",
+    "Rejected": "Odrzucony",
+    "Error": "Błąd"
+  },
+  "postTimeline": {
+    "title": "Historia statusów",
+    "via": "przez {{trigger}}"
+  },
+  "notifications": {
+    "title": "Powiadomienia",
+    "empty": "Brak powiadomień",
+    "triggers": {
+      "system": "System",
+      "community": "Zgłoszenia społeczności"
+    },
+    "toasts": {
+      "published": "Post opublikowany",
+      "rejected": "Post odrzucony",
+      "error": "Błąd moderacji — post zostanie sprawdzony ręcznie",
+      "flagged": "Twój post został oznaczony do ponownej weryfikacji"
+    },
+    "reasons": {
+      "flagged": "Twój post został zgłoszony przez społeczność i oczekuje na ponowną weryfikację.",
+      "rejected": "Twój post został odrzucony przez automatyczną moderację treści za naruszenie zasad.",
+      "error": "Automatyczna moderacja nie mogła przetworzyć tego postu. Zostanie sprawdzony ręcznie.",
+      "default": "Twój post oczekuje na automatyczną weryfikację."
+    }
+  },
+  "followList": {
+    "title": "Połączenia",
+    "emptyFollowing": "Nie obserwujesz jeszcze nikogo.",
+    "emptyFollowers": "Brak obserwujących."
+  },
+  "avatar": {
+    "cropTitle": "Przytnij zdjęcie",
+    "zoom": "Powiększenie",
+    "savePhoto": "Zapisz zdjęcie",
+    "uploadPhoto": "Prześlij zdjęcie",
+    "uploadHint": "Prześlij zdjęcie. Zostanie przycięte do kwadratu.",
+    "label": "Awatar",
+    "toasts": {
+      "updated": "Awatar zaktualizowany",
+      "failed": "Nie udało się przesłać awatara. Spróbuj ponownie."
+    }
+  },
+  "searchModal": {
+    "placeholder": "Szukaj użytkowników…",
+    "clear": "Wyczyść",
+    "noResults": "Nie znaleziono użytkowników",
+    "startTyping": "Zacznij pisać, aby wyszukać"
+  },
+  "sidebar": {
+    "home": "Strona główna",
+    "search": "Szukaj",
+    "newPost": "Nowy post",
+    "notifications": "Powiadomienia",
+    "settings": "Ustawienia",
+    "signIn": "Zaloguj się",
+    "createAccount": "Utwórz konto",
+    "toasts": {
+      "postSubmitted": "Post przesłany",
+      "postPending": "Twój post oczekuje na weryfikację.",
+      "postFailed": "Nie udało się utworzyć postu. Spróbuj ponownie."
+    }
+  },
+  "navUser": {
+    "viewProfile": "Zobacz profil",
+    "settings": "Ustawienia",
+    "notifications": "Powiadomienia",
+    "logOut": "Wyloguj się"
+  },
+  "settings": {
+    "tabs": {
+      "general": "Ogólne",
+      "profile": "Profil",
+      "security": "Bezpieczeństwo"
+    },
+    "general": {
+      "title": "Ogólne",
+      "subtitle": "Preferencje aplikacji i ustawienia wyświetlania.",
+      "theme": "Motyw",
+      "themeDesc": "Przełącz między trybem jasnym i ciemnym.",
+      "language": "Język",
+      "languageDesc": "Język interfejsu.",
+      "languages": {
+        "en": "Angielski",
+        "pl": "Polski",
+        "de": "Niemiecki",
+        "fr": "Francuski"
+      }
+    },
+    "profile": {
+      "title": "Profil",
+      "subtitle": "Zarządzaj swoimi publicznymi informacjami.",
+      "displayName": "Nazwa wyświetlana",
+      "displayNamePlaceholder": "Twoje imię",
+      "username": "Nazwa użytkownika",
+      "usernamePlaceholder": "nazwa_użytkownika",
+      "bio": "Bio",
+      "bioPlaceholder": "Powiedz światu coś o sobie",
+      "toasts": {
+        "saved": "Profil zapisany",
+        "saveFailed": "Nie udało się zapisać profilu. Spróbuj ponownie."
+      }
+    },
+    "security": {
+      "title": "Bezpieczeństwo",
+      "subtitle": "Zarządzaj hasłem i zabezpieczeniami konta.",
+      "changePassword": "Zmień hasło",
+      "currentPassword": "Aktualne hasło",
+      "newPassword": "Nowe hasło",
+      "confirmPassword": "Potwierdź nowe hasło",
+      "passwordMismatch": "Hasła nie są zgodne.",
+      "updatePassword": "Zaktualizuj hasło",
+      "dangerZone": "Strefa niebezpieczna",
+      "deleteAccount": "Usuń konto",
+      "deleteAccountDesc": "Trwale usuń swoje konto i wszystkie dane.",
+      "toasts": {
+        "passwordUpdated": "Hasło zaktualizowane",
+        "passwordFailed": "Nie udało się zaktualizować hasła. Spróbuj ponownie.",
+        "deleteFailed": "Nie udało się usunąć konta. Spróbuj ponownie."
+      }
+    }
+  }
+}

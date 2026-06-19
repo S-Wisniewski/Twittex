@@ -1,5 +1,6 @@
 import Post from "@/components/Post";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Separator } from "@/components/ui/separator";
@@ -69,6 +70,7 @@ const CommentThread = ({
 };
 
 const PostPage = () => {
+  const { t } = useTranslation();
   const { postId } = useParams<{ userName: string; postId: string }>();
   const { currentUser } = useAuth();
   const gate = useAuthGate();
@@ -114,14 +116,14 @@ const PostPage = () => {
         queryClient.invalidateQueries({ queryKey: ["comments", postId] });
         queryClient.invalidateQueries({ queryKey: ["post", postId] });
       })
-      .catch(() => toast.error("Failed to post reply."));
+      .catch(() => toast.error(t("postPage.replyFailed")));
     setReplyingTo(null);
   };
 
   if (!post) {
     return (
       <div className="flex items-center justify-center p-16 text-sm text-muted-foreground">
-        Loading…
+        {t("common.loading")}
       </div>
     );
   }
@@ -174,7 +176,7 @@ const PostPage = () => {
 
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">
-          {comments.length} {comments.length === 1 ? "comment" : "comments"}
+          {t("postPage.comment", { count: comments.length })}
         </span>
         <ComposePostDialog
           open={dialogOpen}
@@ -189,7 +191,7 @@ const PostPage = () => {
           trigger={
             <Button variant="outline">
               <MessageSquarePlus />
-              Reply
+              {t("common.reply")}
             </Button>
           }
           userName={currentUser?.userName ?? ""}

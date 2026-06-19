@@ -8,6 +8,7 @@ import {
 } from "./ui/item";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/contexts/useAuth";
@@ -44,39 +45,28 @@ type PostProps = {
   commentCount: number;
 };
 
-const STATUS_CONFIG: Record<
-  PostStatus,
-  { label: string; className: string } | null
-> = {
-  Published: null,
-  Pending: {
-    label: "Pending automated review",
-    className: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  },
-  Flagged: {
-    label: "Reported by the community — pending re-review",
-    className: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  },
-  Review: null,
-  Rejected: {
-    label: "Removed — policy violation",
-    className: "bg-destructive/10 text-destructive dark:text-destructive-foreground",
-  },
-  Error: {
-    label: "Moderation error — will be reviewed",
-    className: "bg-muted text-muted-foreground",
-  },
+const STATUS_CLASSNAMES: Partial<Record<PostStatus, string>> = {
+  Pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  Flagged: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  Rejected: "bg-destructive/10 text-destructive dark:text-destructive-foreground",
+  Error: "bg-muted text-muted-foreground",
 };
 
-const REVIEW_TYPE_LABELS: Record<ReviewType, string> = {
-  InappropriateContent: "Inappropriate content",
-  Spam: "Spam",
-  Harassment: "Harassment",
-  HateSpeech: "Hate speech",
-  Misinformation: "Misinformation",
-  Other: "Other",
+const STATUS_LABEL_KEY: Partial<Record<PostStatus, string>> = {
+  Pending: "post.statusPending",
+  Flagged: "post.statusFlagged",
+  Rejected: "post.statusRejected",
+  Error: "post.statusError",
 };
 
+const REVIEW_TYPE_KEYS: Record<ReviewType, string> = {
+  InappropriateContent: "post.reportReasons.inappropriate",
+  Spam: "post.reportReasons.spam",
+  Harassment: "post.reportReasons.harassment",
+  HateSpeech: "post.reportReasons.hate",
+  Misinformation: "post.reportReasons.misinfo",
+  Other: "post.reportReasons.other",
+};
 
 function formatSmartDate(iso: string) {
   const date = new Date(iso);
@@ -123,6 +113,7 @@ const Post = ({
   className?: string;
   threadIndent?: boolean;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const gate = useAuthGate();
@@ -143,30 +134,25 @@ const Post = ({
           pages: old.pages.map((page) => page.filter((p) => p.id !== post.id)),
         },
       );
-      // Profile posts tab
       queryClient.setQueriesData<PostType[]>(
         { queryKey: ["posts", "user"] },
         (old) => old?.filter((p) => p.id !== post.id),
       );
-      // Profile replies tab — ReplyThread[] keyed by ["replies", "user", userId]
       queryClient.setQueriesData<ReplyThread[]>(
         { queryKey: ["replies", "user"] },
         (old) => old?.filter((t) => t.reply.id !== post.id),
       );
-      // PostPage comments — Post[] keyed by ["comments", postId]
       queryClient.setQueriesData<PostType[]>(
         { queryKey: ["comments"] },
         (old) => old?.filter((p) => p.id !== post.id),
       );
-      toast.success("Post deleted");
+      toast.success(t("post.toasts.deleted"));
     },
-    onError: () => toast.error("Failed to delete post. Please try again."),
+    onError: () => toast.error(t("post.toasts.deleteFailed")),
   });
 
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportType, setReportType] = useState<ReviewType>(
-    "InappropriateContent",
-  );
+  const [reportType, setReportType] = useState<ReviewType>("InappropriateContent");
   const [reportDescription, setReportDescription] = useState("");
 
   const handleReport = () => {
@@ -176,18 +162,19 @@ const Post = ({
         description: reportDescription || undefined,
       })
       .then(() => {
-        toast.success("Post reported", {
-          description: `Reason: ${REVIEW_TYPE_LABELS[reportType]}. Our team will review it shortly.`,
+        toast.success(t("post.toasts.reported"), {
+          description: t("post.toasts.reportedDesc", { type: t(REVIEW_TYPE_KEYS[reportType]) }),
         });
       })
       .catch(() => {
-        toast.error("Failed to submit report. Please try again.");
+        toast.error(t("post.toasts.reportFailed"));
       });
     setReportOpen(false);
     setReportDescription("");
   };
 
-  const statusConfig = STATUS_CONFIG[post.status];
+  const statusClassName = STATUS_CLASSNAMES[post.status];
+  const statusLabelKey = STATUS_LABEL_KEY[post.status];
 
   const { data: logs = [] } = useQuery({
     queryKey: ["posts", post.id, "logs"],
@@ -224,19 +211,19 @@ const Post = ({
             />
             <DialogContent showCloseButton={false}>
               <DialogHeader>
-                <DialogTitle className="text-center">Delete post?</DialogTitle>
+                <DialogTitle className="text-center">{t("post.deleteTitle")}</DialogTitle>
                 <DialogDescription className="text-center">
-                  This action cannot be undone.
+                  {t("post.deleteBody")}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="flex items-center justify-center! gap-4">
-                <DialogClose render={<Button variant="outline">Cancel</Button>} />
+                <DialogClose render={<Button variant="outline">{t("common.cancel")}</Button>} />
                 <Button
                   variant="destructive"
                   disabled={deleteMutation.isPending}
                   onClick={() => deleteMutation.mutate()}
                 >
-                  Delete
+                  {t("common.delete")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -246,14 +233,14 @@ const Post = ({
         {!isAuthor && !!currentUser && (
           <Dialog open={reportOpen} onOpenChange={setReportOpen}>
             <div className="flex">
-              {statusConfig && (
+              {statusClassName && statusLabelKey && (
                 <div
                   className={cn(
                     "flex items-center rounded-lg px-3 py-1.5 text-xs font-medium w-fit",
-                    statusConfig.className,
+                    statusClassName,
                   )}
                 >
-                  {statusConfig.label}
+                  {t(statusLabelKey)}
                 </div>
               )}
               <DialogTrigger
@@ -267,10 +254,10 @@ const Post = ({
             <DialogContent showCloseButton={false}>
               <DialogHeader>
                 <DialogTitle className="text-center">
-                  Report this post
+                  {t("post.reportTitle")}
                 </DialogTitle>
                 <DialogDescription className="text-center">
-                  Select a reason and optionally describe the issue.
+                  {t("post.reportBody")}
                 </DialogDescription>
               </DialogHeader>
 
@@ -280,17 +267,15 @@ const Post = ({
                   onChange={(e) => setReportType(e.target.value as ReviewType)}
                   className="w-full rounded-xl border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors"
                 >
-                  {(Object.keys(REVIEW_TYPE_LABELS) as ReviewType[]).map(
-                    (key) => (
-                      <option key={key} value={key}>
-                        {REVIEW_TYPE_LABELS[key]}
-                      </option>
-                    ),
-                  )}
+                  {(Object.keys(REVIEW_TYPE_KEYS) as ReviewType[]).map((key) => (
+                    <option key={key} value={key}>
+                      {t(REVIEW_TYPE_KEYS[key])}
+                    </option>
+                  ))}
                 </select>
 
                 <Textarea
-                  placeholder="Additional details (optional)"
+                  placeholder={t("post.reportDetailsPlaceholder")}
                   value={reportDescription}
                   onChange={(e) => setReportDescription(e.target.value)}
                   maxLength={500}
@@ -302,10 +287,10 @@ const Post = ({
 
               <DialogFooter className="flex items-center justify-center! gap-4">
                 <DialogClose
-                  render={<Button variant="outline">Cancel</Button>}
+                  render={<Button variant="outline">{t("common.cancel")}</Button>}
                 />
                 <Button variant={"destructive"} onClick={handleReport}>
-                  Report
+                  {t("post.report")}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import UserAvatar from "@/components/UserAvatar";
@@ -33,18 +34,17 @@ const ComposePostDialog = ({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
 }: ComposePostDialogProps) => {
+  const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
   const [draft, setDraft] = useState("");
 
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
 
-  // Reset draft each time the dialog transitions from closed → open
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
       setDraft("");
     }
-
     setOpen(nextOpen);
   };
 
@@ -65,10 +65,12 @@ const ComposePostDialog = ({
     setOpen(false);
   };
 
-  const title = replyingTo ? `Reply to ${replyingTo}` : "New post";
+  const title = replyingTo
+    ? t("compose.replyTo", { name: replyingTo })
+    : t("compose.newPost");
   const placeholder = replyingTo
-    ? `Replying to @${replyingTo}…`
-    : "What's happening?";
+    ? t("compose.replyingTo", { name: replyingTo })
+    : t("compose.whatsHappening");
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -101,9 +103,9 @@ const ComposePostDialog = ({
             {remaining}
           </span>
           <div className="flex gap-2">
-            <DialogClose render={<Button variant="outline">Cancel</Button>} />
+            <DialogClose render={<Button variant="outline">{t("common.cancel")}</Button>} />
             <Button onClick={handleSubmit} disabled={!canSubmit}>
-              {replyingTo ? "Reply" : "Post"}
+              {replyingTo ? t("common.reply") : t("common.post")}
             </Button>
           </div>
         </DialogFooter>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { Notification, NotificationTrigger } from "@/types/Notification";
 import type { Post, PostStatus } from "@/types/Post";
@@ -9,22 +10,22 @@ import { postsApi } from "@/api/posts";
 
 const HUB_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:5260"}/hubs/notifications`;
 
-function statusReason(status: PostStatus): string {
-  switch (status) {
-    case "Flagged":  return "Your post was reported by the community and is pending re-review.";
-    case "Rejected": return "Your post was rejected by automated content moderation for policy violations.";
-    case "Error":    return "Automated moderation could not process this post. It will be reviewed manually.";
-    default:         return "Your post is awaiting automated review.";
-  }
-}
-
 export function useNotifications() {
+  const { t } = useTranslation();
   const { currentUser } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
   const queryClient = useQueryClient();
 
-  // Seed initial state from persisted post statuses on login
+  function statusReason(status: PostStatus): string {
+    switch (status) {
+      case "Flagged":  return t("notifications.reasons.flagged");
+      case "Rejected": return t("notifications.reasons.rejected");
+      case "Error":    return t("notifications.reasons.error");
+      default:         return t("notifications.reasons.default");
+    }
+  }
+
   useEffect(() => {
     if (!currentUser) return;
 
@@ -41,9 +42,9 @@ export function useNotifications() {
       }));
       setNotifications(initial);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  // Real-time SignalR updates
   useEffect(() => {
     if (!currentUser) return;
 
@@ -69,17 +70,15 @@ export function useNotifications() {
         postExcerpt: payload.postExcerpt ?? "",
         oldStatus: payload.oldStatus ?? "Pending",
         newStatus: payload.newStatus,
-        reason: payload.reason ?? "",
+        reason: statusReason(payload.newStatus),
         triggeredBy: payload.triggeredBy ?? "system",
         createdAt: new Date().toISOString(),
       };
-      // Replace any existing seeded entry for this post, then prepend the live one
       setNotifications((prev) => [
         notification,
         ...prev.filter((n) => n.postId !== payload.id),
       ]);
 
-      // Update feed + profile cache so the post status reflects immediately
       queryClient.setQueriesData<InfiniteData<Post[]>>(
         { queryKey: ["feed"] },
         (old) => {
@@ -96,18 +95,16 @@ export function useNotifications() {
         { queryKey: ["userPosts"] },
         (old) => old?.map((p) => (p.id === payload.id ? { ...p, status: payload.newStatus } : p)),
       );
-      // Refresh the audit log shown inside the post
       queryClient.invalidateQueries({ queryKey: ["posts", payload.id, "logs"] });
 
-      // Toast so the user knows without opening notifications
       if (payload.newStatus === "Published") {
-        toast.success("Post published");
+        toast.success(t("notifications.toasts.published"));
       } else if (payload.newStatus === "Rejected") {
-        toast.error("Post rejected", { description: payload.reason ?? undefined });
+        toast.error(t("notifications.toasts.rejected"), { description: payload.reason ?? undefined });
       } else if (payload.newStatus === "Error") {
-        toast.warning("Moderation error — your post will be reviewed manually");
+        toast.warning(t("notifications.toasts.error"));
       } else if (payload.newStatus === "Flagged") {
-        toast.warning("Your post has been flagged for re-review");
+        toast.warning(t("notifications.toasts.flagged"));
       }
     });
 
@@ -120,7 +117,7 @@ export function useNotifications() {
       connection.stop();
       connectionRef.current = null;
     };
-  }, [currentUser, queryClient]);
+  }, [currentUser, queryClient, t]);
 
   return { notifications };
 }

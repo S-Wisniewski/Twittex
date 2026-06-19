@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authApi } from "@/api/auth";
 
 const ConfirmEmail = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const email =
@@ -19,7 +21,7 @@ const ConfirmEmail = () => {
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     if (!code.trim()) {
-      setError("Please enter the confirmation code.");
+      setError(t("confirmEmail.errors.codeRequired"));
       return;
     }
     setError("");
@@ -30,7 +32,7 @@ const ConfirmEmail = () => {
       sessionStorage.setItem("pendingOnboarding", "true");
       navigate("/login");
     } catch {
-      setError("Invalid or expired code. Please try again.");
+      setError(t("confirmEmail.errors.invalidCode"));
     } finally {
       setLoading(false);
     }
@@ -44,18 +46,18 @@ const ConfirmEmail = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight">Twittex</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Community-moderated social platform
+              {t("auth.tagline")}
             </p>
           </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col gap-5">
           <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-semibold">Confirm your email</h2>
+            <h2 className="text-lg font-semibold">{t("confirmEmail.title")}</h2>
             <p className="text-sm text-muted-foreground">
-              We sent a verification code to
-              {email ? <strong className="text-foreground"> {email}</strong> : " your email address"}.
-              Enter it below to activate your account.
+              {t("confirmEmail.sent")}
+              {email ? <strong className="text-foreground"> {email}</strong> : ` ${t("confirmEmail.yourEmail")}`}.{" "}
+              {t("confirmEmail.instruction")}
             </p>
           </div>
 
@@ -67,10 +69,10 @@ const ConfirmEmail = () => {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Confirmation code</label>
+              <label className="text-sm font-medium">{t("confirmEmail.label")}</label>
               <Input
                 type="text"
-                placeholder="123456"
+                placeholder={t("confirmEmail.placeholder")}
                 value={code}
                 onChange={(e) =>
                   setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
@@ -82,18 +84,18 @@ const ConfirmEmail = () => {
             </div>
 
             <Button type="submit" className="w-full mt-2" disabled={loading}>
-              {loading ? "Verifying…" : "Verify email"}
+              {loading ? t("confirmEmail.verifying") : t("confirmEmail.verify")}
             </Button>
           </form>
 
           <p className="text-xs text-center text-muted-foreground">
-            Already verified?{" "}
+            {t("confirmEmail.alreadyVerified")}{" "}
             <button
               type="button"
               className="underline hover:text-foreground transition-colors"
               onClick={() => navigate("/login")}
             >
-              Sign in
+              {t("auth.signIn")}
             </button>
           </p>
         </div>

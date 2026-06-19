@@ -26,6 +26,7 @@ import {
 import Settings from "./Settings";
 import NotificationsSheet from "./NotificationsSheet";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/contexts/useAuth";
@@ -39,6 +40,7 @@ export function NavUser({
     avatar: string;
   };
 }) {
+  const { t } = useTranslation();
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
@@ -86,7 +88,7 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => navigate(`/${currentUser?.userName}`)}>
                 <UserRound />
-                View profile
+                {t("navUser.viewProfile")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={(e) => {
@@ -95,7 +97,7 @@ export function NavUser({
                 }}
               >
                 <SettingsIcon />
-                Settings
+                {t("navUser.settings")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={(e) => {
@@ -104,7 +106,7 @@ export function NavUser({
                 }}
               >
                 <Bell />
-                Notifications
+                {t("navUser.notifications")}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -116,7 +118,7 @@ export function NavUser({
               }}
             >
               <LogOut />
-              Log out
+              {t("navUser.logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

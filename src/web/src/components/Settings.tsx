@@ -4,11 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { PasswordInput } from "./ui/password-input";
 import { Textarea } from "./ui/textarea";
 import { Separator } from "./ui/separator";
 import UserAvatar from "./UserAvatar";
 import AvatarCropDialog from "./AvatarCropDialog";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/useAuth";
 import { usersApi } from "@/api/users";
 import { authApi } from "@/api/auth";
@@ -21,12 +23,13 @@ type SettingsProps = {
 };
 
 const settingsTabs = [
-  { key: "general", value: "General", icon: <SettingsIcon /> },
-  { key: "profile", value: "Profile", icon: <User /> },
-  { key: "security", value: "Security", icon: <Lock /> },
+  { key: "general", icon: <SettingsIcon /> },
+  { key: "profile", icon: <User /> },
+  { key: "security", icon: <Lock /> },
 ];
 
 const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => {
+  const { t, i18n } = useTranslation();
   const { currentUser, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +68,7 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
     await refreshUser();
     setAvatarUrl(publicUrl);
     setCropSrc(null);
-    toast.success("Avatar updated");
+    toast.success(t("avatar.toasts.updated"));
   };
 
   const handleSaveProfile = async () => {
@@ -78,10 +81,10 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
         avatarUrl,
       });
       await refreshUser();
-      toast.success("Profile saved");
+      toast.success(t("settings.profile.toasts.saved"));
       setIsOpen(false);
     } catch {
-      toast.error("Failed to save profile. Please try again.");
+      toast.error(t("settings.profile.toasts.saveFailed"));
     }
   };
 
@@ -89,12 +92,12 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
     if (!currentPassword || !newPassword || passwordMismatch) return;
     try {
       await authApi.changePassword({ currentPassword, newPassword });
-      toast.success("Password updated");
+      toast.success(t("settings.security.toasts.passwordUpdated"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch {
-      toast.error("Failed to update password. Please try again.");
+      toast.error(t("settings.security.toasts.passwordFailed"));
     }
   };
 
@@ -105,8 +108,14 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
       await logout();
       navigate("/login");
     } catch {
-      toast.error("Failed to delete account. Please try again.");
+      toast.error(t("settings.security.toasts.deleteFailed"));
     }
+  };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const lang = e.target.value;
+    i18n.changeLanguage(lang);
+    localStorage.setItem("language", lang);
   };
 
   return (
@@ -132,7 +141,7 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
               className={"max-h-fit gap-2"}
             >
               {item.icon}
-              {item.value}
+              {t(`settings.tabs.${item.key}`)}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -140,18 +149,18 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
         {/* ── General ── */}
         <TabsContent value={"general"} className={"p-6 space-y-6 flex-1"}>
           <div>
-            <h3 className="font-semibold text-base mb-1">General</h3>
+            <h3 className="font-semibold text-base mb-1">{t("settings.general.title")}</h3>
             <p className="text-sm text-muted-foreground">
-              App preferences and display settings.
+              {t("settings.general.subtitle")}
             </p>
           </div>
           <Separator />
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Theme</p>
+              <p className="text-sm font-medium">{t("settings.general.theme")}</p>
               <p className="text-xs text-muted-foreground">
-                Switch between light and dark mode.
+                {t("settings.general.themeDesc")}
               </p>
             </div>
             <ModeToggle />
@@ -161,38 +170,31 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Language</p>
+              <p className="text-sm font-medium">{t("settings.general.language")}</p>
               <p className="text-xs text-muted-foreground">
-                Display language for the interface.
+                {t("settings.general.languageDesc")}
               </p>
             </div>
-            <select className="rounded-xl border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring transition-colors">
-              <option value="en">English</option>
-              <option value="pl">Polish</option>
-              <option value="de">German</option>
-              <option value="fr">French</option>
+            <select
+              value={i18n.language}
+              onChange={handleLanguageChange}
+              className="rounded-xl border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring transition-colors"
+            >
+              <option value="en">{t("settings.general.languages.en")}</option>
+              <option value="pl">{t("settings.general.languages.pl")}</option>
+              <option value="de">{t("settings.general.languages.de")}</option>
+              <option value="fr">{t("settings.general.languages.fr")}</option>
             </select>
           </div>
 
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Notifications</p>
-              <p className="text-xs text-muted-foreground">
-                Email notifications for new followers and likes.
-              </p>
-            </div>
-            <input type="checkbox" className="size-4 cursor-pointer" defaultChecked />
-          </div>
         </TabsContent>
 
         {/* ── Profile ── */}
         <TabsContent value={"profile"} className={"p-6 space-y-6 flex-1"}>
           <div>
-            <h3 className="font-semibold text-base mb-1">Profile</h3>
+            <h3 className="font-semibold text-base mb-1">{t("settings.profile.title")}</h3>
             <p className="text-sm text-muted-foreground">
-              Manage your public information.
+              {t("settings.profile.subtitle")}
             </p>
           </div>
           <Separator />
@@ -203,15 +205,15 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                aria-label="Upload photo"
+                aria-label={t("avatar.uploadPhoto")}
               >
                 <Upload className="size-5 text-white" />
               </button>
             </div>
             <div className="flex flex-col gap-1.5">
-              <p className="text-sm font-medium">Avatar</p>
+              <p className="text-sm font-medium">{t("avatar.label")}</p>
               <p className="text-xs text-muted-foreground">
-                Upload a photo. It will be cropped to a square.
+                {t("avatar.uploadHint")}
               </p>
               <Button
                 variant="outline"
@@ -220,7 +222,7 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="size-3.5" />
-                Upload photo
+                {t("avatar.uploadPhoto")}
               </Button>
             </div>
             <input
@@ -236,17 +238,17 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
 
           <div className="grid gap-4 max-w-md">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Display name</label>
+              <label className="text-sm font-medium">{t("settings.profile.displayName")}</label>
               <Input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your name"
+                placeholder={t("settings.profile.displayNamePlaceholder")}
                 maxLength={50}
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Username</label>
+              <label className="text-sm font-medium">{t("settings.profile.username")}</label>
               <div className="flex items-center gap-1">
                 <span className="text-sm text-muted-foreground">@</span>
                 <Input
@@ -254,18 +256,18 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
                   onChange={(e) =>
                     setUsername(e.target.value.replace(/[^a-z0-9_]/gi, ""))
                   }
-                  placeholder="username"
+                  placeholder={t("settings.profile.usernamePlaceholder")}
                   maxLength={30}
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Bio</label>
+              <label className="text-sm font-medium">{t("settings.profile.bio")}</label>
               <Textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell the world something about yourself"
+                placeholder={t("settings.profile.bioPlaceholder")}
                 maxLength={160}
               />
               <span className="text-xs text-muted-foreground text-right">
@@ -275,9 +277,9 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handleSaveProfile}>Save changes</Button>
+            <Button onClick={handleSaveProfile}>{t("common.save")}</Button>
             <Button variant="outline" onClick={() => setIsOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </TabsContent>
@@ -285,22 +287,21 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
         {/* ── Security ── */}
         <TabsContent value={"security"} className={"p-6 space-y-6 flex-1"}>
           <div>
-            <h3 className="font-semibold text-base mb-1">Security</h3>
+            <h3 className="font-semibold text-base mb-1">{t("settings.security.title")}</h3>
             <p className="text-sm text-muted-foreground">
-              Manage your password and account security.
+              {t("settings.security.subtitle")}
             </p>
           </div>
           <Separator />
 
           <div className="flex flex-col gap-4 max-w-md">
-            <p className="text-sm font-medium">Change password</p>
+            <p className="text-sm font-medium">{t("settings.security.changePassword")}</p>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm text-muted-foreground">
-                Current password
+                {t("settings.security.currentPassword")}
               </label>
-              <Input
-                type="password"
+              <PasswordInput
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
@@ -309,10 +310,9 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm text-muted-foreground">
-                New password
+                {t("settings.security.newPassword")}
               </label>
-              <Input
-                type="password"
+              <PasswordInput
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="••••••••"
@@ -321,10 +321,9 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm text-muted-foreground">
-                Confirm new password
+                {t("settings.security.confirmPassword")}
               </label>
-              <Input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
@@ -332,7 +331,7 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
               />
               {passwordMismatch && (
                 <p className="text-xs text-destructive">
-                  Passwords do not match.
+                  {t("settings.security.passwordMismatch")}
                 </p>
               )}
             </div>
@@ -346,21 +345,21 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
               }
               onClick={handleChangePassword}
             >
-              Update password
+              {t("settings.security.updatePassword")}
             </Button>
           </div>
 
           <Separator />
 
           <div className="flex flex-col gap-3 max-w-md">
-            <p className="text-sm font-medium">Danger zone</p>
+            <p className="text-sm font-medium">{t("settings.security.dangerZone")}</p>
             <div className="flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/5 p-4">
               <div>
                 <p className="text-sm font-medium text-destructive">
-                  Delete account
+                  {t("settings.security.deleteAccount")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Permanently delete your account and all data.
+                  {t("settings.security.deleteAccountDesc")}
                 </p>
               </div>
               <Button
@@ -368,7 +367,7 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
                 size="sm"
                 onClick={handleDeleteAccount}
               >
-                Delete
+                {t("common.delete")}
               </Button>
             </div>
           </div>

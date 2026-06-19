@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { usersApi } from "@/api/users";
 import { useAuth } from "@/contexts/useAuth";
 
 const Onboarding = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const userId = currentUser?.id ?? "";
@@ -17,7 +19,7 @@ const Onboarding = () => {
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     if (!displayName.trim()) {
-      setError("Display name is required.");
+      setError(t("onboarding.errors.displayNameRequired"));
       return;
     }
     setError("");
@@ -27,7 +29,7 @@ const Onboarding = () => {
       sessionStorage.removeItem("pendingOnboarding");
       navigate("/");
     } catch {
-      setError("Failed to save profile. Please try again.");
+      setError(t("onboarding.errors.saveFailed"));
     } finally {
       setLoading(false);
     }
@@ -41,16 +43,16 @@ const Onboarding = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight">Twittex</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Community-moderated social platform
+              {t("auth.tagline")}
             </p>
           </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm flex flex-col gap-5">
           <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-semibold">Set up your profile</h2>
+            <h2 className="text-lg font-semibold">{t("onboarding.title")}</h2>
             <p className="text-sm text-muted-foreground">
-              Almost there! Add a display name so others can find you.
+              {t("onboarding.subtitle")}
             </p>
           </div>
 
@@ -63,13 +65,13 @@ const Onboarding = () => {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">
-                Display name{" "}
+                {t("onboarding.displayNameLabel")}{" "}
                 <span className="text-destructive" aria-hidden>
                   *
                 </span>
               </label>
               <Input
-                placeholder="Your Name"
+                placeholder={t("onboarding.displayNamePlaceholder")}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 autoFocus
@@ -78,7 +80,7 @@ const Onboarding = () => {
             </div>
 
             <Button type="submit" className="w-full mt-2" disabled={loading}>
-              {loading ? "Saving…" : "Continue"}
+              {loading ? t("common.saving") : t("onboarding.continue")}
             </Button>
           </form>
         </div>

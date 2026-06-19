@@ -9,6 +9,7 @@ import { ThemeProvider } from "./components/theme-provider.tsx";
 import { AuthProvider } from "./contexts/AuthContext.tsx";
 import { router } from "./router/routes.tsx";
 
+import "./i18n";
 import "./index.css";
 
 const queryClient = new QueryClient();

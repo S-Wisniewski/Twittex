@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { NotificationTrigger } from "@/types/Notification";
 import type { PostStatus } from "@/types/Post";
 import { X as XIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useNotifications } from "@/hooks/useNotifications";
 
 const STATUS_COLOR: Record<PostStatus, string> = {
@@ -18,11 +19,6 @@ const STATUS_COLOR: Record<PostStatus, string> = {
   Review: "text-sky-600 dark:text-sky-400",
   Rejected: "text-destructive",
   Error: "text-muted-foreground",
-};
-
-const TRIGGER_LABEL: Record<NotificationTrigger, string> = {
-  system: "System",
-  community: "Community reports",
 };
 
 function formatDate(iso: string) {
@@ -41,13 +37,14 @@ type NotificationsSheetProps = {
 };
 
 const NotificationsSheet = ({ open, onOpenChange }: NotificationsSheetProps) => {
+  const { t } = useTranslation();
   const { notifications } = useNotifications();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-md flex flex-col p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b flex-row items-center justify-between gap-2">
-          <SheetTitle>Notifications</SheetTitle>
+          <SheetTitle>{t("notifications.title")}</SheetTitle>
           <SheetClose render={<Button variant="ghost" size="icon-sm" aria-label="Close" />}>
             <XIcon className="size-4" />
           </SheetClose>
@@ -56,7 +53,7 @@ const NotificationsSheet = ({ open, onOpenChange }: NotificationsSheetProps) => 
         <div className="flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              No notifications yet
+              {t("notifications.empty")}
             </div>
           ) : (
             <ul className="divide-y">
@@ -69,16 +66,16 @@ const NotificationsSheet = ({ open, onOpenChange }: NotificationsSheetProps) => 
                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs text-muted-foreground">
-                          {n.oldStatus}
+                          {t(`postStatus.${n.oldStatus}`)}
                           {" → "}
                         </span>
                         <span
                           className={`text-xs font-semibold ${STATUS_COLOR[n.newStatus]}`}
                         >
-                          {n.newStatus}
+                          {t(`postStatus.${n.newStatus}`)}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          · {TRIGGER_LABEL[n.triggeredBy]}
+                          · {t(`notifications.triggers.${n.triggeredBy}` as NotificationTrigger)}
                         </span>
                       </div>
 
