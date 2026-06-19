@@ -32,8 +32,12 @@ namespace ModerationSystem.Tests
                 .AddEnvironmentVariables()
                 .Build();
 
+            var configBuilderWithModel = new ConfigurationBuilder()
+                .AddEnvironmentVariables()
+                .Build();
+
             // Real AI Service hitting AWS Bedrock
-            var aiService = new AiService(configBuilder);
+            var aiService = new AiService(configBuilderWithModel);
 
             // Mock other services
             var auditMock = new Mock<IAuditService>();
@@ -60,7 +64,7 @@ namespace ModerationSystem.Tests
             {
                 Id = 1,
                 CognitoUserId = authorId,
-                Content = "This is definitely a spam post! Click my scammy link right now to win 1000$! http://scam-link.ru",
+                Content = "Selling stolen credit cards and illegal drugs. DM me for fast delivery and cheap prices.",
                 Status = PostStatus.Published
             };
             _context.Posts.Add(post);
@@ -76,8 +80,8 @@ namespace ModerationSystem.Tests
             {
                 await _reportService.CreateReportAsync(1, $"reporter{i}", new CreateReportRequest
                 {
-                    Reason = ReportReason.Spam,
-                    Description = "This looks like a dangerous phishing scam link."
+                    Reason = ReportReason.InappropriateContent,
+                    Description = "This user is openly selling illegal goods."
                 });
             }
 
