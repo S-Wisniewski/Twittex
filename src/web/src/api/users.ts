@@ -19,6 +19,12 @@ export const usersApi = {
   updateProfile: (userId: string, dto: UpdateProfileDto) =>
     apiClient.patch<User>(`/api/users/${userId}`, dto),
 
+  getFollowers: (userId: string) =>
+    apiClient.get<User[]>(`/api/users/${userId}/followers`),
+
+  getFollowing: (userId: string) =>
+    apiClient.get<User[]>(`/api/users/${userId}/following`),
+
   follow: (userId: string) =>
     apiClient.post<void>(`/api/users/${userId}/follow`),
 

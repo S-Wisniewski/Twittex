@@ -16,6 +16,7 @@ import { usersApi } from "@/api/users";
 import { postsApi } from "@/api/posts";
 import { ReplyThreadView } from "@/components/ReplyThreadView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FollowListDialog from "@/components/FollowListDialog";
 import type { Post as PostType } from "@/types/Post";
 import type { User } from "@/types/User";
 
@@ -33,6 +34,7 @@ const Profile = () => {
   const target = userName || currentUser?.userName;
 
   const [copyHandle, setCopyHandle] = useState(false);
+  const [followList, setFollowList] = useState<"followers" | "following" | null>(null);
 
   const { data: user } = useQuery({
     queryKey: ["user", target],
@@ -120,19 +122,28 @@ const Profile = () => {
               <CalendarDaysIcon size={"16"} />
               <span>Joined {formatDate(user.createdAt)}</span>
             </div>
+            {user.content && (
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">{user.content}</p>
+            )}
           </div>
         </div>
 
         <div className="flex flex-col items-center gap-4">
           <div className="flex gap-4 text-sm">
-            <div className="flex gap-1">
+            <button
+              className="flex gap-1 hover:underline cursor-pointer"
+              onClick={() => setFollowList("following")}
+            >
               <span className="font-bold">{user.following}</span>
               <span className="text-muted-foreground">Following</span>
-            </div>
-            <div className="flex gap-1">
+            </button>
+            <button
+              className="flex gap-1 hover:underline cursor-pointer"
+              onClick={() => setFollowList("followers")}
+            >
               <span className="font-bold">{user.followers}</span>
               <span className="text-muted-foreground">Followers</span>
-            </div>
+            </button>
           </div>
 
           {isOwnProfile ? null : user.youFollow ? (
@@ -163,6 +174,12 @@ const Profile = () => {
           )}
         </div>
       </div>
+
+      <FollowListDialog
+        userId={user.id}
+        defaultTab={followList}
+        onClose={() => setFollowList(null)}
+      />
 
       <Separator />
 

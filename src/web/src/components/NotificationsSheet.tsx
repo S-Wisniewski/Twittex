@@ -6,10 +6,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import type { NotificationTrigger } from "@/types/Notification";
 import type { PostStatus } from "@/types/Post";
-import { CheckCheck, X as XIcon } from "lucide-react";
+import { X as XIcon } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 
 const STATUS_COLOR: Record<PostStatus, string> = {
@@ -42,38 +41,16 @@ type NotificationsSheetProps = {
 };
 
 const NotificationsSheet = ({ open, onOpenChange }: NotificationsSheetProps) => {
-  const { notifications, markRead, markAllRead } = useNotifications();
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { notifications } = useNotifications();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-md flex flex-col p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <SheetTitle>Notifications</SheetTitle>
-            {unreadCount > 0 && (
-              <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground shrink-0">
-                {unreadCount}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="xs"
-                className="text-muted-foreground gap-1"
-                onClick={markAllRead}
-              >
-                <CheckCheck className="size-3" />
-                Mark all read
-              </Button>
-            )}
-            <SheetClose render={<Button variant="ghost" size="icon-sm" aria-label="Close" />}>
-              <XIcon className="size-4" />
-            </SheetClose>
-          </div>
+          <SheetTitle>Notifications</SheetTitle>
+          <SheetClose render={<Button variant="ghost" size="icon-sm" aria-label="Close" />}>
+            <XIcon className="size-4" />
+          </SheetClose>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
@@ -86,27 +63,17 @@ const NotificationsSheet = ({ open, onOpenChange }: NotificationsSheetProps) => 
               {notifications.map((n) => (
                 <li
                   key={n.id}
-                  className={cn(
-                    "px-6 py-4 transition-colors cursor-pointer hover:bg-muted/50",
-                    !n.read && "bg-primary/5",
-                  )}
-                  onClick={() => markRead(n.id)}
+                  className="px-6 py-4 hover:bg-muted/50"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {!n.read && (
-                          <span className="size-2 rounded-full bg-primary shrink-0" />
-                        )}
                         <span className="text-xs text-muted-foreground">
                           {n.oldStatus}
                           {" → "}
                         </span>
                         <span
-                          className={cn(
-                            "text-xs font-semibold",
-                            STATUS_COLOR[n.newStatus],
-                          )}
+                          className={`text-xs font-semibold ${STATUS_COLOR[n.newStatus]}`}
                         >
                           {n.newStatus}
                         </span>

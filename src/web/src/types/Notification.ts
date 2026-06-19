@@ -11,7 +11,6 @@ export type Notification = {
   reason: string;
   triggeredBy: NotificationTrigger;
   createdAt: string;
-  read: boolean;
 };
 
 const TRIGGER_LABELS: Record<NotificationTrigger, string> = {

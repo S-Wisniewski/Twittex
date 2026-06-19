@@ -38,7 +38,6 @@ export function useNotifications() {
         reason: statusReason(post.status),
         triggeredBy: "system" as const,
         createdAt: post.createdAt,
-        read: false,
       }));
       setNotifications(initial);
     });
@@ -73,7 +72,6 @@ export function useNotifications() {
         reason: payload.reason ?? "",
         triggeredBy: payload.triggeredBy ?? "system",
         createdAt: new Date().toISOString(),
-        read: false,
       };
       // Replace any existing seeded entry for this post, then prepend the live one
       setNotifications((prev) => [
@@ -124,13 +122,5 @@ export function useNotifications() {
     };
   }, [currentUser, queryClient]);
 
-  const markRead = (id: string) =>
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-
-  const markAllRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-
-  return { notifications, markRead, markAllRead };
+  return { notifications };
 }
