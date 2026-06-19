@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { authApi } from "@/api/auth";
 import { useAuth } from "@/contexts/useAuth";
+import { ApiError } from "@/api/client";
 
 type FormError = Partial<{
   email: string;
@@ -96,8 +97,22 @@ const Auth = () => {
       });
       sessionStorage.setItem("pendingConfirmEmail", signUpEmail);
       navigate("/confirm-email", { state: { email: signUpEmail } });
-    } catch {
-      setSignUpErrors({ general: t("auth.errors.registrationFailed") });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        const errors = (err.body as any)?.errors as Record<string, string> | undefined;
+        if (errors) {
+          setSignUpErrors({
+            email: errors.Email?.[0],
+            username: errors.Username?.[0],
+            password: errors.Password?.[0],
+            general: errors.General?.[0],
+          });
+        } else {
+          setSignUpErrors({ general: t("auth.errors.registrationFailed") });
+        }
+      } else {
+        setSignUpErrors({ general: t("auth.errors.registrationFailed") });
+      }
     } finally {
       setSignUpLoading(false);
     }

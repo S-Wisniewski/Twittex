@@ -8,6 +8,8 @@ namespace ModerationSystem.Api.Models.Dto.AuthDtos
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
         [Required]
+        public string Username { get; set; } = string.Empty;
+        [Required]
         [MinLength(8, ErrorMessage = "Password must be at least 8 characters long.")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$",
             ErrorMessage = "Password must contain uppercase, number and special character")]
