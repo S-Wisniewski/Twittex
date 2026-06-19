@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { authApi } from "@/api/auth";
 import { useAuth } from "@/contexts/useAuth";
-import { ApiError } from "@/api/client";
+import { ApiError, type ApiErrorBody } from "@/api/client";
 
 type FormError = Partial<{
   email: string;
@@ -99,7 +99,7 @@ const Auth = () => {
       navigate("/confirm-email", { state: { email: signUpEmail } });
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
-        const errors = (err.body as any)?.errors as Record<string, string> | undefined;
+        const errors: ApiErrorBody["errors"] = err.body?.errors;
         if (errors) {
           setSignUpErrors({
             email: errors.Email?.[0],

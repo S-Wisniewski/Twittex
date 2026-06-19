@@ -1,9 +1,14 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5260";
 
+export type ApiErrorBody = {
+  title?: string;
+  errors?: Record<string, string[]>;
+}
+
 export class ApiError extends Error {
   status?: number;
-  body?: unknown;
-  constructor(message: string, status?: number, body?: unknown) {
+  body?: ApiErrorBody;
+  constructor(message: string, status?: number, body?: ApiErrorBody) {
     super(message);
     this.name = "ApiError";
     this.status = status;
@@ -75,16 +80,14 @@ async function request<T>(
   }
 
   if (!res.ok) {
-    let body: unknown;
+    let body: ApiErrorBody | undefined;
     const text = await res.text().catch(() => "");
     try {
-      body = JSON.parse(text);
+      body = JSON.parse(text) as ApiErrorBody;
     } catch {
-      body = text;
+      body = undefined;
     }
-    const message =
-      typeof body === "string" ? body : (body as any)?.title ?? res.statusText;
-    throw new ApiError(message, res.status, body);
+    throw new ApiError(body?.title ?? text ?? res.statusText, res.status, body);
   }
 
   if (res.status === 204) return undefined as T;
