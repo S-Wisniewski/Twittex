@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { Post, PostStatus } from "@/types/Post";
+import type { Post, PostStatus, ReplyThread } from "@/types/Post";
 
 export type CreatePostDto = {
   content: string;
@@ -7,8 +7,8 @@ export type CreatePostDto = {
 };
 
 export type PostLog = {
-  id: number;
-  oldStatus: PostStatus;
+  id: string;
+  oldStatus: PostStatus | null;
   newStatus: PostStatus;
   reason: string;
   triggeredBy: "llm" | "moderator" | "community" | "system";
@@ -16,7 +16,8 @@ export type PostLog = {
 };
 
 export const postsApi = {
-  getFeed: () => apiClient.get<Post[]>("/api/posts"),
+  getFeed: (page = 1, pageSize = 15) =>
+    apiClient.get<Post[]>(`/api/posts?page=${page}&pageSize=${pageSize}`),
 
   getById: (id: string) => apiClient.get<Post>(`/api/posts/${id}`),
 
@@ -31,4 +32,16 @@ export const postsApi = {
   like: (id: string) => apiClient.post<void>(`/api/posts/${id}/likes`),
 
   unlike: (id: string) => apiClient.delete<void>(`/api/posts/${id}/likes`),
+
+  getComments: (postId: string) =>
+    apiClient.get<Post[]>(`/api/posts/${postId}/comments`),
+
+  getRepliesByUser: (userId: string) =>
+    apiClient.get<ReplyThread[]>(`/api/users/${userId}/replies`),
+
+  getAncestors: (postId: string) =>
+    apiClient.get<Post[]>(`/api/posts/${postId}/ancestors`),
+
+  getMyPostStatuses: () =>
+    apiClient.get<Post[]>(`/api/users/me/post-statuses`),
 };

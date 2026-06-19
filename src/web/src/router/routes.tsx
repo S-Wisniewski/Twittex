@@ -28,11 +28,11 @@ const appRoutes: RouteObject[] = [
     element: <Home />,
   },
   {
-    path: "/:userId",
+    path: "/:userName",
     element: <Profile />,
   },
   {
-    path: "/:userId/post/:postId",
+    path: "/:userName/post/:postId",
     element: <PostPage />,
   },
   {

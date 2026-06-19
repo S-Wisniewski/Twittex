@@ -28,7 +28,7 @@ import NotificationsSheet from "./NotificationsSheet";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import UserAvatar from "./UserAvatar";
-import { CURRENT_USER } from "@/lib/currentUser";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function NavUser({
   user,
@@ -41,6 +41,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
@@ -83,7 +84,7 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => navigate(`/${CURRENT_USER.id}`)}>
+              <DropdownMenuItem onClick={() => navigate(`/${currentUser?.userName}`)}>
                 <UserRound />
                 View profile
               </DropdownMenuItem>
@@ -109,8 +110,8 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => {
-                // TODO: await Auth.signOut() — Cognito
+              onClick={async () => {
+                await logout();
                 navigate("/login");
               }}
             >

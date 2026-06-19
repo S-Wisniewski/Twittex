@@ -15,7 +15,7 @@ type ILogIn = {
   password: string;
 };
 
-type TokenResponse = {
+export type TokenResponse = {
   accessToken: string;
   idToken: string;
   refreshToken: string;
@@ -35,4 +35,7 @@ export const authApi = {
 
   confirmEmail: (body: { email: string; confirmationCode: string }) =>
     apiClient.post(`/api/auth/confirm-email`, body),
+
+  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+    apiClient.post<void>("/api/auth/change-password", body),
 };

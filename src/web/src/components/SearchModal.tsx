@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useAuthGate } from "@/hooks/useAuthGate";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,8 @@ import {
 } from "@/components/ui/item";
 import { Button } from "@/components/ui/button";
 import UserAvatar from "@/components/UserAvatar";
-import { mockProfile, type User } from "@/types/User";
+import type { User } from "@/types/User";
+import { usersApi } from "@/api/users";
 import { SearchIcon } from "lucide-react";
 
 type SearchModalProps = {
@@ -24,18 +26,15 @@ type SearchModalProps = {
 
 const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
   const navigate = useNavigate();
+  const gate = useAuthGate();
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
     if (val.trim()) {
-      // TODO: usersApi.search(val)
-      const results = Array.from(
-        { length: Math.floor(Math.random() * 6) + 2 },
-        () => mockProfile,
-      );
+      const results = await usersApi.search(val).catch(() => []);
       setUsers(results);
     } else {
       setUsers([]);
@@ -89,13 +88,13 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
                   <Item
                     variant="default"
                     className="rounded-none cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleNavigate(user.userId)}
+                    onClick={() => handleNavigate(user.userName)}
                   >
                     <div className="flex gap-3 items-center flex-1 min-w-0">
                       <UserAvatar url={user.userAvatarUrl} name={user.userName} />
                       <div className="flex flex-col min-w-0">
                         <ItemHeader className="text-sm font-medium">{user.userName}</ItemHeader>
-                        <ItemDescription>@{user.userId}</ItemDescription>
+                        <ItemDescription>@{user.userName}</ItemDescription>
                       </div>
                     </div>
                     <ItemActions>
@@ -103,7 +102,7 @@ const SearchModal = ({ open, onOpenChange }: SearchModalProps) => {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: usersApi.follow(user.userId)
+                          gate(() => usersApi.follow(user.id));
                         }}
                       >
                         Follow

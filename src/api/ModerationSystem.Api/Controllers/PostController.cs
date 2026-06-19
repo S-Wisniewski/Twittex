@@ -48,6 +48,15 @@ namespace ModerationSystem.Api.Controllers
             return Ok(posts);
         }
 
+        [HttpGet("~/api/users/{userId}/replies")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetUserReplies(string userId)
+        {
+            string? currentUserId = GetCurrentUserId();
+            var threads = await _postService.GetUserRepliesAsync(userId, currentUserId);
+            return Ok(threads);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
         {
@@ -77,6 +86,33 @@ namespace ModerationSystem.Api.Controllers
             if (!success) return NotFound();
 
             return Ok();
+        }
+
+        [HttpGet("{postId}/ancestors")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAncestors(int postId)
+        {
+            string? currentUserId = GetCurrentUserId();
+            var ancestors = await _postService.GetAncestorsAsync(postId, currentUserId);
+            return Ok(ancestors);
+        }
+
+        [HttpGet("~/api/users/me/post-statuses")]
+        public async Task<IActionResult> GetMyPostStatuses()
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+            var posts = await _postService.GetActiveStatusPostsAsync(currentUserId);
+            return Ok(posts);
+        }
+
+        [HttpGet("{postId}/comments")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetComments(int postId)
+        {
+            string? currentUserId = GetCurrentUserId();
+            var comments = await _postService.GetCommentsAsync(postId, currentUserId);
+            return Ok(comments);
         }
 
         [HttpDelete("{id}/likes")]

@@ -1,90 +1,22 @@
 import Post from "@/components/Post";
-import { mockPost, type Post as PostType } from "@/types/Post";
 import { useState } from "react";
+import { useParams } from "react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Separator } from "@/components/ui/separator";
-import { isoMinus } from "@/lib/utils";
 import ComposePostDialog from "@/components/ComposePostDialog";
 import { Button } from "@/components/ui/button";
 import { MessageSquarePlus } from "lucide-react";
-import { CURRENT_USER } from "@/lib/currentUser";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGate } from "@/hooks/useAuthGate";
+import { postsApi } from "@/api/posts";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import type { Post as PostType } from "@/types/Post";
+
+const THREAD_LINE_X = 36;
 
 type CommentNode = PostType & { replies?: PostType[] };
 
-const mockComments: CommentNode[] = [
-  {
-    ...mockPost,
-    id: "c1",
-    userName: "Alex Johnson",
-    userId: "alexj",
-    content: "Great post! Really got me thinking.",
-    likeCount: 14,
-    commentCount: 2,
-    status: "Published",
-    createdAt: isoMinus({ minutes: 45 }),
-    replies: [
-      {
-        ...mockPost,
-        id: "c1r1",
-        userName: "Epstein",
-        userId: "EpsteinIslandBoy",
-        content: "Thanks, glad it resonated!",
-        likeCount: 3,
-        commentCount: 0,
-        status: "Published",
-        createdAt: isoMinus({ minutes: 30 }),
-      },
-      {
-        ...mockPost,
-        id: "c1r2",
-        userName: "Maria Chen",
-        userId: "mariachen",
-        content: "Same here — especially the second point.",
-        likeCount: 1,
-        commentCount: 0,
-        status: "Published",
-        createdAt: isoMinus({ minutes: 20 }),
-      },
-    ],
-  },
-  {
-    ...mockPost,
-    id: "c2",
-    userName: "Another User",
-    userId: "anotheruser",
-    content: "I disagree with some of this.",
-    likeCount: 2,
-    commentCount: 0,
-    status: "Flagged",
-    createdAt: isoMinus({ hours: 2 }),
-    replies: [],
-  },
-  {
-    ...mockPost,
-    id: "c3",
-    userName: "Jane Smith",
-    userId: "janesmith",
-    content: "Very interesting take, do you have sources?",
-    likeCount: 8,
-    commentCount: 1,
-    status: "Published",
-    createdAt: isoMinus({ hours: 3 }),
-    replies: [
-      {
-        ...mockPost,
-        id: "c3r1",
-        userName: "Epstein",
-        userId: "EpsteinIslandBoy",
-        content: "Check the link in my bio!",
-        likeCount: 2,
-        commentCount: 0,
-        status: "Published",
-        createdAt: isoMinus({ hours: 2, minutes: 30 }),
-      },
-    ],
-  },
-];
-
-// parentCommentId is always the top-level comment id (never a nested reply id)
 type ReplyingTo = { parentCommentId: string; displayName: string } | null;
 
 const CommentThread = ({
@@ -94,7 +26,8 @@ const CommentThread = ({
   comment: CommentNode;
   onReplyClick: (target: ReplyingTo) => void;
 }) => {
-  const isAuthor = comment.userId === CURRENT_USER.id;
+  const { currentUser } = useAuth();
+  const isAuthor = comment.userId === currentUser?.id;
 
   return (
     <div className="flex flex-col gap-2">
@@ -103,7 +36,10 @@ const CommentThread = ({
         disableComments
         isAuthor={isAuthor}
         onReply={() =>
-          onReplyClick({ parentCommentId: comment.id, displayName: comment.userName })
+          onReplyClick({
+            parentCommentId: comment.id,
+            displayName: comment.userName,
+          })
         }
       />
 
@@ -116,7 +52,7 @@ const CommentThread = ({
                 key={reply.id}
                 post={reply}
                 disableComments
-                isAuthor={reply.userId === CURRENT_USER.id}
+                isAuthor={reply.userId === currentUser?.id}
                 onReply={() =>
                   onReplyClick({
                     parentCommentId: comment.id,
@@ -133,9 +69,35 @@ const CommentThread = ({
 };
 
 const PostPage = () => {
-  const [comments, setComments] = useState<CommentNode[]>(mockComments);
+  const { postId } = useParams<{ userName: string; postId: string }>();
+  const { currentUser } = useAuth();
+  const gate = useAuthGate();
+  const queryClient = useQueryClient();
   const [replyingTo, setReplyingTo] = useState<ReplyingTo>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data: post } = useQuery({
+    queryKey: ["post", postId],
+    queryFn: () => postsApi.getById(postId!),
+    enabled: !!postId,
+  });
+
+  const { data: serverComments = [] } = useQuery({
+    queryKey: ["comments", postId],
+    queryFn: () => postsApi.getComments(postId!),
+    enabled: !!postId,
+  });
+
+  const { data: ancestors = [] } = useQuery({
+    queryKey: ["ancestors", postId],
+    queryFn: () => postsApi.getAncestors(postId!),
+    enabled: !!postId && !!post?.parentPostId,
+  });
+
+  const comments: CommentNode[] = serverComments.map((c) => ({
+    ...c,
+    replies: [],
+  }));
 
   const handleReplyClick = (target: ReplyingTo) => {
     setReplyingTo(target);
@@ -143,39 +105,72 @@ const PostPage = () => {
   };
 
   const handleReply = (content: string) => {
-    const newReply: PostType = {
-      id: Date.now().toString(),
-      userName: CURRENT_USER.name,
-      userId: CURRENT_USER.id,
-      userAvatarUrl: CURRENT_USER.avatarUrl,
-      createdAt: new Date().toISOString(),
-      content,
-      isLiked: false,
-      status: "Pending",
-      likeCount: 0,
-      commentCount: 0,
-    };
-
-    if (replyingTo) {
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === replyingTo.parentCommentId
-            ? { ...c, replies: [...(c.replies ?? []), newReply], commentCount: c.commentCount + 1 }
-            : c,
-        ),
-      );
-    } else {
-      setComments((prev) => [{ ...newReply, replies: [] }, ...prev]);
-    }
-
+    postsApi
+      .create({
+        content,
+        parentPostId: Number(replyingTo?.parentCommentId ?? postId),
+      })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+        queryClient.invalidateQueries({ queryKey: ["post", postId] });
+      })
+      .catch(() => toast.error("Failed to post reply."));
     setReplyingTo(null);
   };
 
-  const isAuthorOfPost = mockPost.userId === CURRENT_USER.id;
+  if (!post) {
+    return (
+      <div className="flex items-center justify-center p-16 text-sm text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
+
+  const isAuthorOfPost = post.userId === currentUser?.id;
 
   return (
     <div className="flex flex-col gap-4">
-      <Post post={mockPost} disableComments isAuthor={isAuthorOfPost} />
+      {/* Ancestor thread chain */}
+      <div className="flex flex-col">
+        {ancestors.map((ancestor, i) => (
+          <div key={ancestor.id} className="relative">
+            {i !== 0 ? (
+              <div
+                className="absolute top-0 h-6 w-0.5 bg-border pointer-events-none z-10"
+                style={{ left: THREAD_LINE_X }}
+              />
+            ) : null}
+            <div
+              className="absolute top-12 bottom-0 w-0.5 bg-border pointer-events-none"
+              style={{ left: THREAD_LINE_X }}
+            />
+            <Post
+              post={ancestor}
+              threadIndent
+              className={cn(
+                i > 0 && "rounded-t-none border-t-0",
+                "rounded-b-none",
+              )}
+            />
+          </div>
+        ))}
+        <div className="relative">
+          {ancestors.length > 0 && (
+            <div
+              className="absolute top-0 h-6 w-0.5 bg-border pointer-events-none z-10"
+              style={{ left: THREAD_LINE_X }}
+            />
+          )}
+          <Post
+            post={post}
+            disableComments
+            isAuthor={isAuthorOfPost}
+            className={
+              ancestors.length > 0 ? "rounded-t-none border-t-0" : undefined
+            }
+          />
+        </div>
+      </div>
 
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">
@@ -184,8 +179,12 @@ const PostPage = () => {
         <ComposePostDialog
           open={dialogOpen}
           onOpenChange={(o) => {
-            setDialogOpen(o);
-            if (!o) setReplyingTo(null);
+            if (o) {
+              gate(() => setDialogOpen(true));
+              return;
+            }
+            setDialogOpen(false);
+            setReplyingTo(null);
           }}
           trigger={
             <Button variant="outline">
@@ -193,8 +192,8 @@ const PostPage = () => {
               Reply
             </Button>
           }
-          userName={CURRENT_USER.name}
-          userAvatarUrl={CURRENT_USER.avatarUrl}
+          userName={currentUser?.userName ?? ""}
+          userAvatarUrl={currentUser?.userAvatarUrl ?? ""}
           replyingTo={replyingTo?.displayName}
           onSubmit={handleReply}
         />

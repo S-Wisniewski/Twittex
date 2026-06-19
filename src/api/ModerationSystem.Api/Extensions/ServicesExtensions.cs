@@ -14,7 +14,9 @@ namespace ModerationSystem.Api.Extensions
     {
         public static IServiceCollection AddAppServices(this IServiceCollection services, IConfiguration config)
         {
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(o =>
+                    o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(config.GetConnectionString("DefaultConnection")));

@@ -11,6 +11,7 @@ namespace ModerationSystem.Api.Services.Users
         Task<IEnumerable<UserResponse>> GetFollowersAsync(string userId, string? currentUserId = null);
         Task<IEnumerable<UserResponse>> GetFollowingAsync(string userId, string? currentUserId = null);
         Task<bool> FollowUserAsync(string userId, string currentUserId);
+        Task<bool> UnfollowUserAsync(string userId, string currentUserId);
         Task<bool> DeleteUserAsync(string userId);
     }
 }

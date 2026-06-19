@@ -36,15 +36,23 @@ namespace ModerationSystem.Api.Services.Notifications
             }
         }
 
-        public async Task NotifyUserOfPostStatusChange(Post post)
+        public async Task NotifyUserOfPostStatusChange(Post post, string? oldStatus = null, string? reason = null, string triggeredBy = "system")
         {
             try
             {
+                var excerpt = post.Content.Length > 100
+                    ? post.Content[..100] + "…"
+                    : post.Content;
+
                 await _hub.Clients.User(post.CognitoUserId)
                     .SendAsync("PostStatusChanged", new
                     {
-                        post.Id,
-                        Status = post.Status.ToString()
+                        Id = post.Id.ToString(),
+                        PostExcerpt = excerpt,
+                        OldStatus = oldStatus,
+                        NewStatus = post.Status.ToString(),
+                        Reason = reason,
+                        TriggeredBy = triggeredBy,
                     });
             }
             catch (Exception ex)

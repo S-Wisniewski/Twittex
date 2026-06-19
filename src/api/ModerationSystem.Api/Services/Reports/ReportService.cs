@@ -91,6 +91,7 @@ namespace ModerationSystem.Api.Services.Reports
 
                 if (aiDecision == PostStatus.Flagged)
                 {
+                    var oldStatus = post.Status.ToString();
                     post.Status = PostStatus.Flagged;
                     post.User.ReputationScore -= 15.0;
 
@@ -100,7 +101,11 @@ namespace ModerationSystem.Api.Services.Reports
                     }
 
                     _auditService.AddLog("System", $"Post {post.Id} flagged by AI after community reports.");
-                    await _notificationsService.NotifyUserOfPostStatusChange(post);
+                    await _notificationsService.NotifyUserOfPostStatusChange(
+                        post,
+                        oldStatus,
+                        "Your post was flagged following community reports and AI re-evaluation.",
+                        "community");
                 }
                 else
                 {

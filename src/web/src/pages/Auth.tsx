@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { authApi } from "@/api/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 type FormError = Partial<{
   email: string;
@@ -16,6 +17,8 @@ type FormError = Partial<{
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { login } = useAuth();
 
   // --- Sign in state ---
   const [signInEmail, setSignInEmail] = useState("");
@@ -48,14 +51,7 @@ const Auth = () => {
         email: signInEmail,
         password: signInPassword,
       });
-      sessionStorage.setItem("accessToken", res.accessToken);
-      sessionStorage.setItem("refreshToken", res.refreshToken);
-      sessionStorage.setItem("idToken", res.idToken);
-      sessionStorage.setItem("expiresIn", res.expiresIn);
-
-      const payload = JSON.parse(atob(res.idToken.split(".")[1]));
-      sessionStorage.setItem("userId", payload.sub);
-
+      await login(res);
       if (sessionStorage.getItem("pendingOnboarding")) {
         navigate("/onboarding");
       } else {
@@ -120,7 +116,7 @@ const Auth = () => {
 
         {/* Auth card */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <Tabs defaultValue="signin">
+          <Tabs defaultValue={searchParams.get("tab") === "signup" ? "signup" : "signin"}>
             <TabsList className="w-full mb-6">
               <TabsTrigger value="signin" className="flex-1">
                 Sign in

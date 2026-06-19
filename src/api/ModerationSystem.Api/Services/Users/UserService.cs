@@ -32,7 +32,7 @@ namespace ModerationSystem.Api.Services.Users
             var user = await _context.Users
                 .Include(u => u.Followers)
                 .Include(u => u.Following)
-                .FirstOrDefaultAsync(u => u.CognitoUserId == userId);
+                .FirstOrDefaultAsync(u => u.CognitoUserId == userId || u.UserName == userId);
 
             if (user == null) return null;
 
@@ -113,21 +113,26 @@ namespace ModerationSystem.Api.Services.Users
             var existingFollow = await _context.Set<UserFollows>()
                 .FirstOrDefaultAsync(f => f.FollowerId == currentUserId && f.FollowedId == userId);
 
-            if (existingFollow != null)
-            {
-                // Unfollow
-                _context.Set<UserFollows>().Remove(existingFollow);
-            }
-            else
-            {
-                // Follow
-                _context.Set<UserFollows>().Add(new UserFollows
-                {
-                    FollowerId = currentUserId,
-                    FollowedId = userId
-                });
-            }
+            if (existingFollow != null) return true;
 
+            _context.Set<UserFollows>().Add(new UserFollows
+            {
+                FollowerId = currentUserId,
+                FollowedId = userId
+            });
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UnfollowUserAsync(string userId, string currentUserId)
+        {
+            var existingFollow = await _context.Set<UserFollows>()
+                .FirstOrDefaultAsync(f => f.FollowerId == currentUserId && f.FollowedId == userId);
+
+            if (existingFollow == null) return false;
+
+            _context.Set<UserFollows>().Remove(existingFollow);
             await _context.SaveChangesAsync();
             return true;
         }

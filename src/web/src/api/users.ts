@@ -9,6 +9,8 @@ export type UpdateProfileDto = {
 };
 
 export const usersApi = {
+  getMe: () => apiClient.get<User>("/api/users/me"),
+
   getById: (userId: string) => apiClient.get<User>(`/api/users/${userId}`),
 
   search: (query: string) =>

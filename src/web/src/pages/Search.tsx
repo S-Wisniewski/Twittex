@@ -11,27 +11,25 @@ import {
   ItemHeader,
 } from "@/components/ui/item";
 import UserAvatar from "@/components/UserAvatar";
-import { mockProfile, type User } from "@/types/User";
+import type { User } from "@/types/User";
+import { usersApi } from "@/api/users";
+import { useAuthGate } from "@/hooks/useAuthGate";
 import { SearchIcon } from "lucide-react";
 import { useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router";
 
 const Search = () => {
   const navigate = useNavigate();
+  const gate = useAuthGate();
   const [users, setUsers] = useState<User[]>([]);
 
-  const handleSearch = (
+  const handleSearch = async (
     event: ChangeEvent<HTMLInputElement, HTMLInputElement>,
   ) => {
-    // TODO: add search endpoint call
     const searchValue = event.currentTarget.value;
-
     if (searchValue) {
-      const mockProfiles = Array.from(
-        { length: Math.floor(Math.random() * 10) },
-        () => mockProfile,
-      );
-      setUsers(mockProfiles);
+      const results = await usersApi.search(searchValue).catch(() => []);
+      setUsers(results);
     } else {
       setUsers([]);
     }
@@ -52,20 +50,20 @@ const Search = () => {
               variant={"outline"}
               key={user.id + index}
               className="flex justify-between items-center cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => navigate(`/${user.userId}`)}
+              onClick={() => navigate(`/${user.userName}`)}
             >
               <div className="flex gap-4 items-center">
                 <UserAvatar url={user.userAvatarUrl} name={user.userName} />
                 <div className="flex flex-col justify-between">
                   <ItemHeader>{user.userName}</ItemHeader>
-                  <ItemDescription>@{user.userId}</ItemDescription>
+                  <ItemDescription>@{user.userName}</ItemDescription>
                 </div>
               </div>
               <ItemActions>
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    // TODO: POST /users/{id}/follow
+                    gate(() => usersApi.follow(user.id));
                   }}
                 >
                   Follow

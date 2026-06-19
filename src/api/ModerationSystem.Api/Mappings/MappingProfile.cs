@@ -16,7 +16,8 @@ namespace ModerationSystem.Api.Mappings
                 .ForMember(dest => dest.UserAvatarUrl, opt => opt.MapFrom(src => src.User != null ? src.User.AvatarUrl : string.Empty))
                 .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => src.Likes.Count))
                 .ForMember(dest => dest.CommentCount, opt => opt.MapFrom(src => src.Replies.Count))
-                .ForMember(dest => dest.IsLiked, opt => opt.Ignore()); // Context dependent
+                .ForMember(dest => dest.IsLiked, opt => opt.Ignore()) // Context dependent
+                .ForMember(dest => dest.ParentUserName, opt => opt.MapFrom(src => src.ParentPost != null && src.ParentPost.User != null ? src.ParentPost.User.UserName : null));
 
             CreateMap<User, UserResponse>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CognitoUserId))

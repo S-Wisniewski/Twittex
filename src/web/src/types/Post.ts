@@ -1,6 +1,6 @@
 import { isoMinus } from "@/lib/utils";
 
-export type PostStatus = "Pending" | "Published" | "Flagged" | "Review" | "Rejected";
+export type PostStatus = "Pending" | "Published" | "Flagged" | "Review" | "Rejected" | "Error";
 
 export type ReviewType =
   | "InappropriateContent"
@@ -14,6 +14,8 @@ export type Post = {
   id: string;
   userName: string;
   userId: string;
+  parentPostId?: number | null;
+  parentUserName?: string | null;
   createdAt: string;
   content: string;
   userAvatarUrl: string;
@@ -21,6 +23,11 @@ export type Post = {
   status: PostStatus;
   likeCount: number;
   commentCount: number;
+};
+
+export type ReplyThread = {
+  ancestors: Post[];
+  reply: Post;
 };
 
 export const mockPost: Post = {

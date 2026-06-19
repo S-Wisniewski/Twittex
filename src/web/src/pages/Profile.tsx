@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CalendarDaysIcon, CopyCheck } from "lucide-react";
 import { useParams } from "react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import UserAvatar from "@/components/UserAvatar";
 import { formatDate } from "@/lib/utils";
@@ -8,53 +9,90 @@ import { Separator } from "@/components/ui/separator";
 import Post from "@/components/Post";
 import { Button } from "@/components/ui/button";
 import { SmallDialog } from "@/components/Dialog";
-import { mockProfile, type User } from "@/types/User";
-import { mockPost, type Post as PostType } from "@/types/Post";
-import { CURRENT_USER } from "@/lib/currentUser";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGate } from "@/hooks/useAuthGate";
 import { usePostStatus } from "@/hooks/usePostStatus";
+import { usersApi } from "@/api/users";
+import { postsApi } from "@/api/posts";
+import { ReplyThreadView } from "@/components/ReplyThreadView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Post as PostType } from "@/types/Post";
+import type { User } from "@/types/User";
 
-// Mock own posts with varied statuses to demonstrate auto-refresh + timeline
-const mockOwnPosts: PostType[] = [
-  { ...mockPost, id: "own1", content: "Just posted this — waiting on review.", status: "Pending", likeCount: 0, commentCount: 0 },
-  { ...mockPost, id: "own2", content: "This one made it through!", status: "Published", likeCount: 18, commentCount: 3 },
-  { ...mockPost, id: "own3", content: "Apparently this was flagged by the community.", status: "Flagged", likeCount: 5, commentCount: 1 },
-  { ...mockPost, id: "own4", content: "Under manual review right now.", status: "Review", likeCount: 2, commentCount: 0 },
-  { ...mockPost, id: "own5", content: "This one got removed.", status: "Rejected", likeCount: 0, commentCount: 0 },
-];
-
-const mockOtherPosts = Array.from({ length: 5 }, (_, i) => ({
-  ...mockPost,
-  id: mockPost.id + i,
-  status: "Published" as const,
-}));
-
-// Wrapper that applies auto-refresh to a single post card (for own active posts)
 function LivePost({ post, isAuthor }: { post: PostType; isAuthor: boolean }) {
   const { status } = usePostStatus(post.id, post.status);
   return <Post post={{ ...post, status }} isAuthor={isAuthor} />;
 }
 
 const Profile = () => {
-  const { userId } = useParams<{ userId: string }>();
-  const isOwnProfile = !userId || userId === CURRENT_USER.id;
+  const { userName } = useParams<{ userName: string }>();
+  const { currentUser } = useAuth();
+  const gate = useAuthGate();
+  const queryClient = useQueryClient();
+  const isOwnProfile = !userName || userName === currentUser?.userName;
+  const target = userName || currentUser?.userName;
 
-  const [copyUserId, setCopyUserId] = useState(false);
-  const [user, setUser] = useState<User>(mockProfile);
+  const [copyHandle, setCopyHandle] = useState(false);
 
-  const posts = isOwnProfile ? mockOwnPosts : mockOtherPosts;
+  const { data: user } = useQuery({
+    queryKey: ["user", target],
+    queryFn: () => usersApi.getById(target!),
+    enabled: !!target,
+  });
 
-  const copyUserIdHandler = () => {
-    if (!copyUserId) {
-      navigator.clipboard.writeText(`@${user.userId}`);
-      setCopyUserId(true);
-      setTimeout(() => setCopyUserId(false), 4000);
+  const { data: posts = [] } = useQuery({
+    queryKey: ["posts", "user", user?.id],
+    queryFn: () => postsApi.getByUser(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const { data: replyThreads = [] } = useQuery({
+    queryKey: ["replies", "user", user?.id],
+    queryFn: () => postsApi.getRepliesByUser(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () =>
+      user!.youFollow ? usersApi.unfollow(user!.id) : usersApi.follow(user!.id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["user", target] });
+      const prev = queryClient.getQueryData<User>(["user", target]);
+      queryClient.setQueryData<User>(["user", target], (old) =>
+        old
+          ? {
+              ...old,
+              youFollow: !old.youFollow,
+              followers: old.youFollow ? old.followers - 1 : old.followers + 1,
+            }
+          : old,
+      );
+      return { prev };
+    },
+    onError: (_err, _v, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["user", target], ctx.prev);
+    },
+  });
+
+  const copyHandleHandler = () => {
+    if (!copyHandle && user) {
+      navigator.clipboard.writeText(`@${user.userName}`);
+      setCopyHandle(true);
+      setTimeout(() => setCopyHandle(false), 4000);
     }
   };
 
   const handleFollow = () => {
-    setUser((prev) => ({ ...prev, youFollow: !prev.youFollow }));
-    // TODO: usersApi.follow / usersApi.unfollow
+    gate(() => followMutation.mutate());
   };
+
+  if (!user) {
+    return (
+      <div className="flex flex-col gap-8 p-8">
+        <p className="text-sm text-muted-foreground">Loading profile…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8 p-8">
@@ -70,12 +108,12 @@ const Profile = () => {
               <span className="text-xl font-bold">{user.userName}</span>
               <div className="flex gap-2 items-center">
                 <span
-                  className={`text-sm text-muted-foreground ${!copyUserId && "cursor-copy"}`}
-                  onClick={copyUserIdHandler}
+                  className={`text-sm text-muted-foreground ${!copyHandle && "cursor-copy"}`}
+                  onClick={copyHandleHandler}
                 >
-                  @{user.userId}
+                  @{user.userName}
                 </span>
-                {copyUserId ? <CopyCheck size={"16"} /> : null}
+                {copyHandle ? <CopyCheck size={"16"} /> : null}
               </div>
             </div>
             <div className="flex gap-2 items-center text-muted-foreground text-sm">
@@ -104,11 +142,11 @@ const Profile = () => {
                   Following
                 </Button>
               }
-              title={`Unfollow ${user.userId}`}
+              title={`Unfollow @${user.userName}`}
               body={
                 <UserAvatar
                   url={user.userAvatarUrl}
-                  name={user.userId}
+                  name={user.userName}
                   size={"medium"}
                 />
               }
@@ -128,21 +166,56 @@ const Profile = () => {
 
       <Separator />
 
-      {isOwnProfile && (
-        <p className="text-sm text-muted-foreground -mb-4">
-          Active posts auto-refresh every 5s until a terminal status is reached.
-        </p>
-      )}
+      <Tabs defaultValue="posts">
+        <TabsList className="w-full bg-transparent p-0 gap-2">
+          <TabsTrigger
+            value="posts"
+            className="flex-1 rounded-full border border-border data-active:bg-primary data-active:text-primary-foreground data-active:border-primary"
+          >
+            Posts
+          </TabsTrigger>
+          <TabsTrigger
+            value="replies"
+            className="flex-1 rounded-full border border-border data-active:bg-primary data-active:text-primary-foreground data-active:border-primary"
+          >
+            Replies
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="flex flex-col gap-4">
-        {posts.map((post) =>
-          isOwnProfile ? (
-            <LivePost key={post.id} post={post} isAuthor />
-          ) : (
-            <Post key={post.id} post={post} />
-          ),
-        )}
-      </div>
+        <TabsContent value="posts">
+          {isOwnProfile && posts.length > 0 && (
+            <p className="text-sm text-muted-foreground mb-4">
+              Active posts auto-refresh every 5s until a terminal status is reached.
+            </p>
+          )}
+          <div className="flex flex-col gap-4 mt-4">
+            {posts.map((post) =>
+              isOwnProfile ? (
+                <LivePost key={post.id} post={post} isAuthor />
+              ) : (
+                <Post key={post.id} post={post} />
+              ),
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="replies">
+          <div className="flex flex-col gap-4 mt-4">
+            {replyThreads.map((thread) => (
+              <ReplyThreadView
+                key={thread.reply.id}
+                thread={thread}
+                isOwnProfile={isOwnProfile}
+              />
+            ))}
+            {replyThreads.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No replies yet.
+              </p>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

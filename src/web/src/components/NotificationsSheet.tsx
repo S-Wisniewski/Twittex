@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Sheet,
   SheetClose,
@@ -8,10 +7,10 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { isoMinus } from "@/lib/utils";
-import type { Notification, NotificationTrigger } from "@/types/Notification";
+import type { NotificationTrigger } from "@/types/Notification";
 import type { PostStatus } from "@/types/Post";
 import { CheckCheck, X as XIcon } from "lucide-react";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const STATUS_COLOR: Record<PostStatus, string> = {
   Published: "text-emerald-600 dark:text-emerald-400",
@@ -19,6 +18,7 @@ const STATUS_COLOR: Record<PostStatus, string> = {
   Flagged: "text-orange-600 dark:text-orange-400",
   Review: "text-sky-600 dark:text-sky-400",
   Rejected: "text-destructive",
+  Error: "text-muted-foreground",
 };
 
 const TRIGGER_LABEL: Record<NotificationTrigger, string> = {
@@ -38,87 +38,15 @@ function formatDate(iso: string) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: "n1",
-    postId: "12313123",
-    postExcerpt: "I love my island",
-    oldStatus: "Pending",
-    newStatus: "Published",
-    reason:
-      "Content passed automated assessment. Toxicity score: 0.04/1.0. No policy violations detected.",
-    triggeredBy: "llm",
-    createdAt: isoMinus({ minutes: 3 }),
-    read: false,
-  },
-  {
-    id: "n2",
-    postId: "99887766",
-    postExcerpt: "This whole system is rigged against free speech...",
-    oldStatus: "Published",
-    newStatus: "Flagged",
-    reason:
-      "3 community reports within 1 hour (weighted score: 2.4). Reason: Misinformation. Post flagged pending review.",
-    triggeredBy: "community",
-    createdAt: isoMinus({ hours: 1, minutes: 15 }),
-    read: false,
-  },
-  {
-    id: "n3",
-    postId: "99887766",
-    postExcerpt: "This whole system is rigged against free speech...",
-    oldStatus: "Flagged",
-    newStatus: "Review",
-    reason:
-      "Risk score exceeded threshold (0.78/1.0). Escalated to manual moderator review.",
-    triggeredBy: "system",
-    createdAt: isoMinus({ hours: 1 }),
-    read: true,
-  },
-  {
-    id: "n4",
-    postId: "55443322",
-    postExcerpt: "Just had the best coffee of my life",
-    oldStatus: "Pending",
-    newStatus: "Published",
-    reason:
-      "Content passed automated assessment. Toxicity score: 0.01/1.0. Sentiment: positive.",
-    triggeredBy: "llm",
-    createdAt: isoMinus({ hours: 5 }),
-    read: true,
-  },
-  {
-    id: "n5",
-    postId: "11223344",
-    postExcerpt: "You people are all the same...",
-    oldStatus: "Review",
-    newStatus: "Rejected",
-    reason:
-      "Manual review completed. Content violates harassment policy (§3.2). Post permanently hidden.",
-    triggeredBy: "moderator",
-    createdAt: isoMinus({ days: 1 }),
-    read: true,
-  },
-];
-
 type NotificationsSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
 const NotificationsSheet = ({ open, onOpenChange }: NotificationsSheetProps) => {
-  const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications);
+  const { notifications, markRead, markAllRead } = useNotifications();
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
-  const markAllRead = () =>
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-
-  const markRead = (id: string) =>
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

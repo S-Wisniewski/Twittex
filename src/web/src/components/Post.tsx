@@ -10,7 +10,11 @@ import { Button } from "./ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import UserAvatar from "./UserAvatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGate } from "@/hooks/useAuthGate";
 import { cn } from "@/lib/utils";
+import { postsApi } from "@/api/posts";
+import { reportsApi } from "@/api/reports";
 import {
   Dialog,
   DialogClose,
@@ -45,6 +49,10 @@ const STATUS_CONFIG: Record<
   { label: string; className: string } | null
 > = {
   Published: null,
+  Error: {
+    label: "Moderation error — pending manual review",
+    className: "bg-muted text-muted-foreground",
+  },
   Pending: {
     label: "Pending review",
     className: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
@@ -156,8 +164,7 @@ function buildMockTimeline(status: PostStatus): TimelineEvent[] {
         id: "t1",
         oldStatus: "Pending",
         newStatus: "Review",
-        reason:
-          "Automated assessment flagged severe content. Score: 0.91/1.0.",
+        reason: "Automated assessment flagged severe content. Score: 0.91/1.0.",
         triggeredBy: "llm",
         createdAt: isoMinus({ minutes: 9 }),
       },
@@ -211,13 +218,19 @@ const Post = ({
   disableComments = false,
   isAuthor = false,
   onReply,
+  className,
+  threadIndent = false,
 }: {
   post: PostProps;
   disableComments?: boolean;
   isAuthor?: boolean;
   onReply?: () => void;
+  className?: string;
+  threadIndent?: boolean;
 }) => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const gate = useAuthGate();
   const [post, setPost] = useState(camePost);
 
   const [reportOpen, setReportOpen] = useState(false);
@@ -227,10 +240,19 @@ const Post = ({
   const [reportDescription, setReportDescription] = useState("");
 
   const handleReport = () => {
-    // TODO: reviewsApi.create(post.id, { reviewType: reportType, description: reportDescription })
-    toast.success("Post reported", {
-      description: `Reason: ${REVIEW_TYPE_LABELS[reportType]}. Our team will review it shortly.`,
-    });
+    reportsApi
+      .create(post.id, {
+        reason: reportType,
+        description: reportDescription || undefined,
+      })
+      .then(() => {
+        toast.success("Post reported", {
+          description: `Reason: ${REVIEW_TYPE_LABELS[reportType]}. Our team will review it shortly.`,
+        });
+      })
+      .catch(() => {
+        toast.error("Failed to submit report. Please try again.");
+      });
     setReportOpen(false);
     setReportDescription("");
   };
@@ -239,108 +261,127 @@ const Post = ({
   const timeline = isAuthor ? buildMockTimeline(post.status) : [];
 
   return (
-    <Item variant={"outline"} className="gap-2">
-      {statusConfig && (
-        <div
-          className={cn(
-            "basis-full rounded-lg px-3 py-1.5 text-xs font-medium",
-            statusConfig.className,
-          )}
-        >
-          {statusConfig.label}
-        </div>
-      )}
-
+    <Item variant={"outline"} className={cn("gap-2", className)}>
       <ItemHeader className="mb-2">
         <div className="flex gap-4 items-center">
           <UserAvatar url={post.userAvatarUrl} name={post.userName} />
           <div className="flex flex-col">
             <span
               className="hover:underline hover:cursor-pointer"
-              onClick={() => navigate(`/${post.userId}`)}
+              onClick={() => navigate(`/${post.userName}`)}
             >
               {post.userName}
             </span>
             <span className="text-sm text-muted-foreground">
-              @{post.userId}
+              @{post.userName}
             </span>
           </div>
         </div>
 
-        {!isAuthor && (
-        <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-          <DialogTrigger
-            render={
-              <Button variant={"link"} size={"icon"}>
-                <Flag />
-              </Button>
-            }
-          />
-          <DialogContent showCloseButton={false}>
-            <DialogHeader>
-              <DialogTitle className="text-center">Report this post</DialogTitle>
-              <DialogDescription className="text-center">
-                Select a reason and optionally describe the issue.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex flex-col gap-3">
-              <select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value as ReviewType)}
-                className="w-full rounded-xl border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors"
-              >
-                {(Object.keys(REVIEW_TYPE_LABELS) as ReviewType[]).map(
-                  (key) => (
-                    <option key={key} value={key}>
-                      {REVIEW_TYPE_LABELS[key]}
-                    </option>
-                  ),
-                )}
-              </select>
-
-              <Textarea
-                placeholder="Additional details (optional)"
-                value={reportDescription}
-                onChange={(e) => setReportDescription(e.target.value)}
-                maxLength={500}
+        {!isAuthor && !!currentUser && (
+          <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+            <div className="flex">
+              {statusConfig && (
+                <div
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-1.5 text-xs font-medium w-fit",
+                    statusConfig.className,
+                  )}
+                >
+                  {statusConfig.label}
+                </div>
+              )}
+              <DialogTrigger
+                render={
+                  <Button variant={"link"} size={"icon"}>
+                    <Flag />
+                  </Button>
+                }
               />
-              <span className="text-xs text-muted-foreground text-right">
-                {reportDescription.length}/500
-              </span>
             </div>
+            <DialogContent showCloseButton={false}>
+              <DialogHeader>
+                <DialogTitle className="text-center">
+                  Report this post
+                </DialogTitle>
+                <DialogDescription className="text-center">
+                  Select a reason and optionally describe the issue.
+                </DialogDescription>
+              </DialogHeader>
 
-            <DialogFooter className="flex items-center justify-center! gap-4">
-              <DialogClose render={<Button variant="outline">Cancel</Button>} />
-              <Button variant={"destructive"} onClick={handleReport}>
-                Report
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <div className="flex flex-col gap-3">
+                <select
+                  value={reportType}
+                  onChange={(e) => setReportType(e.target.value as ReviewType)}
+                  className="w-full rounded-xl border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 transition-colors"
+                >
+                  {(Object.keys(REVIEW_TYPE_LABELS) as ReviewType[]).map(
+                    (key) => (
+                      <option key={key} value={key}>
+                        {REVIEW_TYPE_LABELS[key]}
+                      </option>
+                    ),
+                  )}
+                </select>
+
+                <Textarea
+                  placeholder="Additional details (optional)"
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  maxLength={500}
+                />
+                <span className="text-xs text-muted-foreground text-right">
+                  {reportDescription.length}/500
+                </span>
+              </div>
+
+              <DialogFooter className="flex items-center justify-center! gap-4">
+                <DialogClose
+                  render={<Button variant="outline">Cancel</Button>}
+                />
+                <Button variant={"destructive"} onClick={handleReport}>
+                  Report
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </ItemHeader>
 
-      <ItemContent>{post.content}</ItemContent>
+      <ItemContent className={threadIndent ? "pl-14" : undefined}>
+        {post.content}
+      </ItemContent>
 
-      {isAuthor && (
-        <PostTimeline events={timeline} className="px-1" />
-      )}
+      {isAuthor && <PostTimeline events={timeline} className="px-1" />}
 
       <ItemFooter>
-        <ItemActions>
+        <ItemActions className={threadIndent ? "pl-12" : undefined}>
           <Button
             variant={"like"}
             size={"icon"}
             className={"cursor-pointer"}
             onClick={() =>
-              setPost((prev) => ({
-                ...prev,
-                isLiked: !prev.isLiked,
-                likeCount: prev.isLiked
-                  ? prev.likeCount - 1
-                  : prev.likeCount + 1,
-              }))
+              gate(() => {
+                const wasLiked = post.isLiked;
+                setPost((prev) => ({
+                  ...prev,
+                  isLiked: !prev.isLiked,
+                  likeCount: prev.isLiked
+                    ? prev.likeCount - 1
+                    : prev.likeCount + 1,
+                }));
+                (wasLiked ? postsApi.unlike : postsApi.like)(post.id).catch(
+                  () => {
+                    setPost((prev) => ({
+                      ...prev,
+                      isLiked: wasLiked,
+                      likeCount: wasLiked
+                        ? prev.likeCount + 1
+                        : prev.likeCount - 1,
+                    }));
+                  },
+                );
+              })
             }
           >
             <Heart
@@ -360,9 +401,9 @@ const Post = ({
             className={"cursor-pointer"}
             onClick={() => {
               if (onReply) {
-                onReply();
+                gate(() => onReply());
               } else if (!disableComments) {
-                navigate(`/${post.userId}/post/${post.id}`);
+                navigate(`/${post.userName}/post/${post.id}`);
               }
             }}
           >

@@ -2,6 +2,8 @@ import * as React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Bell, Home, LogOut, Pencil, Search, Settings as SettingsIcon } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { postsApi } from "@/api/posts";
 
 import {
   Sidebar,
@@ -19,29 +21,36 @@ import ComposePostDialog from "./ComposePostDialog";
 import SearchModal from "./SearchModal";
 import Settings from "./Settings";
 import NotificationsSheet from "./NotificationsSheet";
-import { CURRENT_USER } from "@/lib/currentUser";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export const AppSidebar = ({
   ...props
 }: React.ComponentProps<typeof Sidebar>) => {
   const navigate = useNavigate();
+  const { currentUser, isLoading, logout } = useAuth();
+  const queryClient = useQueryClient();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  const createPostMutation = useMutation({
+    mutationFn: (content: string) => postsApi.create({ content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      toast.success("Post submitted", { description: "Your post is pending review." });
+      navigate("/");
+    },
+    onError: () => toast.error("Failed to create post. Please try again."),
+  });
+
   const handleNewPost = (content: string) => {
-    // TODO: postsApi.create({ content })
-    console.log("new post", content);
-    toast.success("Post submitted", {
-      description: "Your post is pending review.",
-    });
-    navigate("/");
+    createPostMutation.mutate(content);
   };
 
-  const handleLogout = () => {
-    // TODO: Auth.signOut() — Cognito
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -87,32 +96,34 @@ export const AppSidebar = ({
           </SidebarMenu>
         </SidebarGroup>
 
-        {/* New post */}
-        <SidebarGroup>
-          <ComposePostDialog
-            trigger={
-              <Button className="w-full gap-2">
-                <Pencil />
-                New post
-              </Button>
-            }
-            userName={CURRENT_USER.name}
-            userAvatarUrl={CURRENT_USER.avatarUrl}
-            onSubmit={handleNewPost}
-          />
-        </SidebarGroup>
+        {/* New post — authenticated only */}
+        {currentUser && (
+          <SidebarGroup>
+            <ComposePostDialog
+              trigger={
+                <Button className="w-full gap-2">
+                  <Pencil />
+                  New post
+                </Button>
+              }
+              userName={currentUser.userName}
+              userAvatarUrl={currentUser.userAvatarUrl}
+              onSubmit={handleNewPost}
+            />
+          </SidebarGroup>
+        )}
 
         {/* Secondary nav — pushed to bottom of scrollable area */}
         <SidebarGroup className="mt-auto">
           <SidebarMenu className="gap-1">
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setIsNotificationsOpen(true)}>
+              <SidebarMenuButton onClick={() => currentUser ? setIsNotificationsOpen(true) : navigate("/login")}>
                 <Bell />
                 <span>Notifications</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => setIsSettingsOpen(true)}>
+              <SidebarMenuButton onClick={() => currentUser ? setIsSettingsOpen(true) : navigate("/login")}>
                 <SettingsIcon />
                 <span>Settings</span>
               </SidebarMenuButton>
@@ -121,34 +132,46 @@ export const AppSidebar = ({
         </SidebarGroup>
       </SidebarContent>
 
-      {/* User row — avatar+name → profile, logout separate */}
       <SidebarFooter>
-        <div className="flex items-center gap-2 px-1 py-1">
-          <button
-            onClick={() => navigate(`/${CURRENT_USER.id}`)}
-            className="flex flex-1 items-center gap-3 min-w-0 rounded-lg p-2 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          >
-            <UserAvatar url={CURRENT_USER.avatarUrl} name={CURRENT_USER.name} />
-            <div className="flex flex-col min-w-0">
-              <span className="truncate text-sm font-medium leading-tight">
-                {CURRENT_USER.name}
-              </span>
-              <span className="truncate text-xs text-muted-foreground leading-tight">
-                @{CURRENT_USER.id}
-              </span>
-            </div>
-          </button>
+        {!isLoading && (
+          currentUser ? (
+            <div className="flex items-center gap-2 px-1 py-1">
+              <button
+                onClick={() => navigate(`/${currentUser.userName}`)}
+                className="flex flex-1 items-center gap-3 min-w-0 rounded-lg p-2 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <UserAvatar url={currentUser.userAvatarUrl} name={currentUser.userName} />
+                <div className="flex flex-col min-w-0">
+                  <span className="truncate text-sm font-medium leading-tight">
+                    {currentUser.userName}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground leading-tight">
+                    @{currentUser.userName}
+                  </span>
+                </div>
+              </button>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={handleLogout}
-            title="Log out"
-          >
-            <LogOut className="size-4" />
-          </Button>
-        </div>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleLogout}
+                title="Log out"
+              >
+                <LogOut className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 p-2">
+              <Button className="w-full" onClick={() => navigate("/login")}>
+                Sign in
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => navigate("/login?tab=signup")}>
+                Create account
+              </Button>
+            </div>
+          )
+        )}
       </SidebarFooter>
 
       {/* Modals / sheets */}

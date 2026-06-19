@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { userApi } from "@/api/user";
+import { usersApi } from "@/api/users";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const userId = sessionStorage.getItem("userId") ?? "";
+  const { currentUser } = useAuth();
+  const userId = currentUser?.id ?? "";
 
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +23,7 @@ const Onboarding = () => {
     setError("");
     setLoading(true);
     try {
-      await userApi.updateProfile(userId, { displayName: displayName.trim() });
+      await usersApi.updateProfile(userId, { displayName: displayName.trim() });
       sessionStorage.removeItem("pendingOnboarding");
       navigate("/");
     } catch {

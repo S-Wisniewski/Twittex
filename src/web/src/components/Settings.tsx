@@ -7,7 +7,12 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Separator } from "./ui/separator";
 import UserAvatar from "./UserAvatar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { usersApi } from "@/api/users";
+import { authApi } from "@/api/auth";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 type SettingsProps = {
   isOpen: boolean;
@@ -21,19 +26,69 @@ const settingsTabs = [
 ];
 
 const Settings = ({ isOpen, setIsOpen }: SettingsProps) => {
-  const [displayName, setDisplayName] = useState("Anya Forger");
-  const [username, setUsername] = useState("anya_forger");
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState(
-    "https://www.pngpacks.com/uploads/data/1849/IMG_Zl6OoDcvZDxh.png",
-  );
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      setDisplayName(currentUser.userName);
+      setUsername(currentUser.userName);
+      setBio(currentUser.content ?? "");
+      setAvatarUrl(currentUser.userAvatarUrl ?? "");
+    }
+  }, [isOpen, currentUser]);
+
   const passwordMismatch =
     newPassword && confirmPassword && newPassword !== confirmPassword;
+
+  const handleSaveProfile = async () => {
+    if (!currentUser) return;
+    try {
+      await usersApi.updateProfile(currentUser.id, {
+        displayName,
+        username,
+        bio,
+        avatarUrl,
+      });
+      toast.success("Profile saved");
+      setIsOpen(false);
+    } catch {
+      toast.error("Failed to save profile. Please try again.");
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || passwordMismatch) return;
+    try {
+      await authApi.changePassword({ currentPassword, newPassword });
+      toast.success("Password updated");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      toast.error("Failed to update password. Please try again.");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!currentUser) return;
+    try {
+      await usersApi.deleteAccount(currentUser.id);
+      await logout();
+      navigate("/login");
+    } catch {
+      toast.error("Failed to delete account. Please try again.");
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={() => setIsOpen(false)}>
@@ -116,7 +171,7 @@ const Settings = ({ isOpen, setIsOpen }: SettingsProps) => {
             <Separator />
 
             <div className="flex items-center gap-4">
-              <UserAvatar url={avatarUrl} name={displayName} size="medium" />
+              <UserAvatar url={avatarUrl} name={username} size="medium" />
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium">Avatar</p>
                 <p className="text-xs text-muted-foreground">
@@ -174,13 +229,7 @@ const Settings = ({ isOpen, setIsOpen }: SettingsProps) => {
             </div>
 
             <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  // TODO: PATCH /users/me
-                }}
-              >
-                Save changes
-              </Button>
+              <Button onClick={handleSaveProfile}>Save changes</Button>
               <Button variant="outline" onClick={() => setIsOpen(false)}>
                 Cancel
               </Button>
@@ -249,9 +298,7 @@ const Settings = ({ isOpen, setIsOpen }: SettingsProps) => {
                   !confirmPassword ||
                   !!passwordMismatch
                 }
-                onClick={() => {
-                  // TODO: POST /auth/change-password
-                }}
+                onClick={handleChangePassword}
               >
                 Update password
               </Button>
@@ -273,9 +320,7 @@ const Settings = ({ isOpen, setIsOpen }: SettingsProps) => {
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => {
-                    // TODO: DELETE /users/me
-                  }}
+                  onClick={handleDeleteAccount}
                 >
                   Delete
                 </Button>

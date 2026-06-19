@@ -68,6 +68,16 @@ namespace ModerationSystem.Api.Controllers
             return Ok(users);
         }
 
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+            var user = await _userService.GetUserAsync(currentUserId, currentUserId);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserRequest body)
         {
@@ -85,9 +95,21 @@ namespace ModerationSystem.Api.Controllers
         {
             string? currentUserId = GetCurrentUserId();
             if (currentUserId == null) return Unauthorized();
-            
+
             var success = await _userService.FollowUserAsync(userId, currentUserId);
             if (!success) return BadRequest("Could not follow user.");
+
+            return Ok();
+        }
+
+        [HttpDelete("{userId}/follow")]
+        public async Task<IActionResult> UnfollowUser(string userId)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var success = await _userService.UnfollowUserAsync(userId, currentUserId);
+            if (!success) return BadRequest("Could not unfollow user.");
 
             return Ok();
         }
