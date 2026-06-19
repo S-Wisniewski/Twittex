@@ -19,6 +19,7 @@ const STATUS_DOT: Record<PostStatus, string> = {
   Flagged: "bg-orange-500",
   Review: "bg-sky-500",
   Rejected: "bg-destructive",
+  Error: "bg-destructive",
 };
 
 const TRIGGER_LABEL: Record<TimelineEvent["triggeredBy"], string> = {
