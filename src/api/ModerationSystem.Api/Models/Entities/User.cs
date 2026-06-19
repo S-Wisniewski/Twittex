@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ModerationSystem.Api.Models.Entities
 {
@@ -26,5 +26,6 @@ namespace ModerationSystem.Api.Models.Entities
                 public ICollection<UserFollows> Followers { get; set; } = new List<UserFollows>();
                 public ICollection<UserFollows> Following { get; set; } = new List<UserFollows>();
                 public ICollection<Log> Logs { get; set; } = new List<Log>();
+                public double ReputationScore { get; set; } = 50.0;
         }
 }

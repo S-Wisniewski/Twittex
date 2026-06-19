@@ -25,6 +25,7 @@ namespace ModerationSystem.Api.Extensions
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAiService, AiService>();
+            services.AddScoped<ModerationSystem.Api.Services.Reports.IReportService, ModerationSystem.Api.Services.Reports.ReportService>();
             services.AddCognitoClient(config);
 
             services.AddSignalR();

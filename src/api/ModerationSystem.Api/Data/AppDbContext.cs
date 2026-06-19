@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Models.Entities;
 
 namespace ModerationSystem.Api.Data
@@ -12,6 +12,8 @@ namespace ModerationSystem.Api.Data
         public DbSet<PostLikes> PostLikes { get; set; }
 
         public DbSet<UserFollows> UserFollows { get; set; }
+
+        public DbSet<Report> Reports { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
@@ -98,6 +100,22 @@ namespace ModerationSystem.Api.Data
                     .WithMany(u => u.Followers)
                     .HasForeignKey(f => f.FollowedId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Report>(entity =>
+            {
+                entity.HasQueryFilter(r => r.DeletedAt == null);
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(r => r.User)
+                    .WithMany()
+                    .HasForeignKey(r => r.CognitoUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(r => r.Post)
+                    .WithMany()
+                    .HasForeignKey(r => r.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
