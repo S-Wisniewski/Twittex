@@ -10,7 +10,7 @@ import { Button } from "./ui/button";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import UserAvatar from "./UserAvatar";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import { cn } from "@/lib/utils";
 import { postsApi } from "@/api/posts";

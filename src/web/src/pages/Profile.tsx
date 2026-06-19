@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import Post from "@/components/Post";
 import { Button } from "@/components/ui/button";
 import { SmallDialog } from "@/components/Dialog";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import { usePostStatus } from "@/hooks/usePostStatus";
 import { usersApi } from "@/api/users";

@@ -28,7 +28,7 @@ import NotificationsSheet from "./NotificationsSheet";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import UserAvatar from "./UserAvatar";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 
 export function NavUser({
   user,

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 
 export function useAuthGate() {
   const { currentUser, isLoading } = useAuth();

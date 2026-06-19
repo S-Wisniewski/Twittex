@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
 import type { Notification, NotificationTrigger } from "@/types/Notification";
 import type { PostStatus } from "@/types/Post";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 import { postsApi } from "@/api/posts";
 
 const HUB_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:5260"}/hubs/notifications`;

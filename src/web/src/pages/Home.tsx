@@ -1,7 +1,7 @@
 import Post from "@/components/Post";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { postsApi } from "@/api/posts";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 

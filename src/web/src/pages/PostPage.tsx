@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import ComposePostDialog from "@/components/ComposePostDialog";
 import { Button } from "@/components/ui/button";
 import { MessageSquarePlus } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import { postsApi } from "@/api/posts";
 import { toast } from "sonner";

@@ -21,7 +21,7 @@ import ComposePostDialog from "./ComposePostDialog";
 import SearchModal from "./SearchModal";
 import Settings from "./Settings";
 import NotificationsSheet from "./NotificationsSheet";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/useAuth";
 import { toast } from "sonner";
 
 export const AppSidebar = ({
