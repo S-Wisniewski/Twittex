@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Dto.PostDtos;
 using ModerationSystem.Api.Models.Entities;
@@ -17,19 +18,22 @@ namespace ModerationSystem.Api.Services.Posts
         private readonly IAuditService _auditService;
         private readonly INotificationService _notificationsService;
         private readonly IAiService _aiService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public PostService(
             AppDbContext context,
             IMapper mapper,
             IAuditService auditService,
             INotificationService notificationsService,
-            IAiService aiService)
+            IAiService aiService,
+            IServiceScopeFactory scopeFactory)
         {
             _context = context;
             _mapper = mapper;
             _auditService = auditService;
             _notificationsService = notificationsService;
             _aiService = aiService;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task<IEnumerable<PostResponse>> GetFeedAsync(int pageNumber = 1, int pageSize = 10, string? currentUserId = null)
@@ -78,36 +82,62 @@ namespace ModerationSystem.Api.Services.Posts
         {
             int? parentPostId = request.ParentPostId == 0 ? null : request.ParentPostId;
 
-            var status = await _aiService.ModerateContentAsync(request.Content);
-
             var post = new Post
             {
                 CognitoUserId = userId,
                 Content = request.Content,
                 ParentPostId = parentPostId,
-                Status = status
+                Status = PostStatus.Pending
             };
 
             _context.Posts.Add(post);
-            await _context.SaveChangesAsync();
-
-            var aiReason = post.Status switch
-            {
-                PostStatus.Published => "Automated review passed. Your post is now live.",
-                PostStatus.Rejected  => "Your post was rejected by automated content moderation for policy violations.",
-                _                    => "An error occurred during automated review. Your post will be reviewed manually."
-            };
-
-            _auditService.AddStatusLog(userId, post.Id, PostStatus.Pending, status, aiReason, "system");
             await _context.SaveChangesAsync();
 
             await _context.Entry(post).Reference(p => p.User).LoadAsync();
             await _context.Entry(post).Collection(p => p.Likes).LoadAsync();
             await _context.Entry(post).Collection(p => p.Replies).LoadAsync();
 
-            await _notificationsService.NotifyUserOfPostStatusChange(post, oldStatus: "Pending", reason: aiReason, triggeredBy: "system");
+            // Return Pending to the client immediately; AI runs in the background
+            _ = Task.Run(() => ModeratePostAsync(post.Id, request.Content, userId));
 
             return MapToPostResponse(post, userId);
+        }
+
+        private async Task ModeratePostAsync(int postId, string content, string userId)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var aiService = scope.ServiceProvider.GetRequiredService<IAiService>();
+            var auditService = scope.ServiceProvider.GetRequiredService<IAuditService>();
+            var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+
+            try
+            {
+                var post = await db.Posts
+                    .Include(p => p.User)
+                    .FirstOrDefaultAsync(p => p.Id == postId);
+                if (post == null) return;
+
+                var status = await aiService.ModerateContentAsync(content);
+                post.Status = status;
+                await db.SaveChangesAsync();
+
+                var reason = status switch
+                {
+                    PostStatus.Published => "Automated review passed. Your post is now live.",
+                    PostStatus.Rejected  => "Your post was rejected by automated content moderation for policy violations.",
+                    _                    => "An error occurred during automated review. Your post will be reviewed manually."
+                };
+
+                auditService.AddStatusLog(userId, postId, PostStatus.Pending, status, reason, "system");
+                await db.SaveChangesAsync();
+
+                await notificationService.NotifyUserOfPostStatusChange(post, oldStatus: "Pending", reason: reason, triggeredBy: "system");
+            }
+            catch
+            {
+                // Background task — swallow to avoid unobserved exceptions crashing the process
+            }
         }
 
         public async Task<IEnumerable<PostLogResponse>> GetLogsAsync(int postId)
@@ -222,6 +252,16 @@ namespace ModerationSystem.Api.Services.Posts
             }
 
             return ancestors.Select(p => MapToPostResponse(p, currentUserId));
+        }
+
+        public async Task<bool> DeletePostAsync(int postId, string userId)
+        {
+            var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == postId);
+            if (post == null || post.CognitoUserId != userId) return false;
+
+            post.DeletedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IEnumerable<PostResponse>> GetActiveStatusPostsAsync(string userId)

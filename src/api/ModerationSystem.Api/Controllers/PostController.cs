@@ -115,6 +115,18 @@ namespace ModerationSystem.Api.Controllers
             return Ok(comments);
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePost(int id)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var success = await _postService.DeletePostAsync(id, currentUserId);
+            if (!success) return NotFound();
+
+            return NoContent();
+        }
+
         [HttpDelete("{id}/likes")]
         public async Task<IActionResult> UnlikePost(int id)
         {

@@ -33,6 +33,8 @@ export const postsApi = {
 
   unlike: (id: string) => apiClient.delete<void>(`/api/posts/${id}/likes`),
 
+  delete: (id: string) => apiClient.delete<void>(`/api/posts/${id}`),
+
   getComments: (postId: string) =>
     apiClient.get<Post[]>(`/api/posts/${postId}/comments`),
 

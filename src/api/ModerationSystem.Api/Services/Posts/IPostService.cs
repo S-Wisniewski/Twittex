@@ -15,5 +15,6 @@ namespace ModerationSystem.Api.Services.Posts
         Task<IEnumerable<ReplyThreadResponse>> GetUserRepliesAsync(string userId, string? currentUserId = null);
         Task<IEnumerable<PostResponse>> GetAncestorsAsync(int postId, string? currentUserId = null);
         Task<IEnumerable<PostResponse>> GetActiveStatusPostsAsync(string userId);
+        Task<bool> DeletePostAsync(int postId, string userId);
     }
 }

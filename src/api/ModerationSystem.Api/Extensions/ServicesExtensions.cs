@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using ModerationSystem.Api.Data;
+using ModerationSystem.Api.Hubs;
 using ModerationSystem.Api.Services.Posts;
 using ModerationSystem.Api.Services.Audit;
 using ModerationSystem.Api.Mappings;
@@ -32,6 +34,7 @@ namespace ModerationSystem.Api.Extensions
             services.AddCognitoClient(config);
 
             services.AddSignalR();
+            services.AddSingleton<IUserIdProvider, SubClaimUserIdProvider>();
 
             services.AddOpenApi();
 

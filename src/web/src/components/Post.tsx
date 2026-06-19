@@ -1,4 +1,4 @@
-import { Flag, Heart, MessageSquare } from "lucide-react";
+import { Flag, Heart, MessageSquare, Trash2 } from "lucide-react";
 import {
   Item,
   ItemActions,
@@ -28,8 +28,8 @@ import {
 import { Textarea } from "./ui/textarea";
 import { toast } from "sonner";
 import PostTimeline from "./PostTimeline";
-import { useQuery } from "@tanstack/react-query";
-import type { PostStatus, ReviewType } from "@/types/Post";
+import { useQuery, useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import type { Post as PostType, ReplyThread, PostStatus, ReviewType } from "@/types/Post";
 
 type PostProps = {
   id: string;
@@ -126,7 +126,42 @@ const Post = ({
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const gate = useAuthGate();
-  const [post, setPost] = useState(camePost);
+  const queryClient = useQueryClient();
+  const post = camePost;
+  const [isLiked, setIsLiked] = useState(camePost.isLiked);
+  const [likeCount, setLikeCount] = useState(camePost.likeCount);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteMutation = useMutation({
+    mutationFn: () => postsApi.delete(post.id),
+    onSuccess: () => {
+      setDeleteOpen(false);
+      queryClient.setQueriesData<InfiniteData<PostType[]>>(
+        { queryKey: ["feed"] },
+        (old) => old && {
+          ...old,
+          pages: old.pages.map((page) => page.filter((p) => p.id !== post.id)),
+        },
+      );
+      // Profile posts tab
+      queryClient.setQueriesData<PostType[]>(
+        { queryKey: ["posts", "user"] },
+        (old) => old?.filter((p) => p.id !== post.id),
+      );
+      // Profile replies tab — ReplyThread[] keyed by ["replies", "user", userId]
+      queryClient.setQueriesData<ReplyThread[]>(
+        { queryKey: ["replies", "user"] },
+        (old) => old?.filter((t) => t.reply.id !== post.id),
+      );
+      // PostPage comments — Post[] keyed by ["comments", postId]
+      queryClient.setQueriesData<PostType[]>(
+        { queryKey: ["comments"] },
+        (old) => old?.filter((p) => p.id !== post.id),
+      );
+      toast.success("Post deleted");
+    },
+    onError: () => toast.error("Failed to delete post. Please try again."),
+  });
 
   const [reportOpen, setReportOpen] = useState(false);
   const [reportType, setReportType] = useState<ReviewType>(
@@ -177,6 +212,36 @@ const Post = ({
             </span>
           </div>
         </div>
+
+        {isAuthor && (
+          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <DialogTrigger
+              render={
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="size-4" />
+                </Button>
+              }
+            />
+            <DialogContent showCloseButton={false}>
+              <DialogHeader>
+                <DialogTitle className="text-center">Delete post?</DialogTitle>
+                <DialogDescription className="text-center">
+                  This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex items-center justify-center! gap-4">
+                <DialogClose render={<Button variant="outline">Cancel</Button>} />
+                <Button
+                  variant="destructive"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate()}
+                >
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
 
         {!isAuthor && !!currentUser && (
           <Dialog open={reportOpen} onOpenChange={setReportOpen}>
@@ -262,37 +327,25 @@ const Post = ({
             className={"cursor-pointer"}
             onClick={() =>
               gate(() => {
-                const wasLiked = post.isLiked;
-                setPost((prev) => ({
-                  ...prev,
-                  isLiked: !prev.isLiked,
-                  likeCount: prev.isLiked
-                    ? prev.likeCount - 1
-                    : prev.likeCount + 1,
-                }));
-                (wasLiked ? postsApi.unlike : postsApi.like)(post.id).catch(
-                  () => {
-                    setPost((prev) => ({
-                      ...prev,
-                      isLiked: wasLiked,
-                      likeCount: wasLiked
-                        ? prev.likeCount + 1
-                        : prev.likeCount - 1,
-                    }));
-                  },
-                );
+                const wasLiked = isLiked;
+                setIsLiked(!isLiked);
+                setLikeCount((c) => (isLiked ? c - 1 : c + 1));
+                (wasLiked ? postsApi.unlike : postsApi.like)(post.id).catch(() => {
+                  setIsLiked(wasLiked);
+                  setLikeCount((c) => (wasLiked ? c + 1 : c - 1));
+                });
               })
             }
           >
             <Heart
               className={cn(
-                post.isLiked &&
+                isLiked &&
                   "fill-destructive stroke-destructive dark:fill-destructive-foreground dark:stroke-destructive-foreground",
               )}
             />
           </Button>
           <span className="text-sm text-muted-foreground tabular-nums">
-            {formatCount(post.likeCount)}
+            {formatCount(likeCount)}
           </span>
 
           <Button

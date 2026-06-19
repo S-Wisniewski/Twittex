@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
+import { useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { Notification, NotificationTrigger } from "@/types/Notification";
-import type { PostStatus } from "@/types/Post";
+import type { Post, PostStatus } from "@/types/Post";
 import { useAuth } from "@/contexts/useAuth";
 import { postsApi } from "@/api/posts";
 
@@ -20,6 +22,7 @@ export function useNotifications() {
   const { currentUser } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const queryClient = useQueryClient();
 
   // Seed initial state from persisted post statuses on login
   useEffect(() => {
@@ -77,6 +80,37 @@ export function useNotifications() {
         notification,
         ...prev.filter((n) => n.postId !== payload.id),
       ]);
+
+      // Update feed + profile cache so the post status reflects immediately
+      queryClient.setQueriesData<InfiniteData<Post[]>>(
+        { queryKey: ["feed"] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) =>
+              page.map((p) => (p.id === payload.id ? { ...p, status: payload.newStatus } : p)),
+            ),
+          };
+        },
+      );
+      queryClient.setQueriesData<Post[]>(
+        { queryKey: ["userPosts"] },
+        (old) => old?.map((p) => (p.id === payload.id ? { ...p, status: payload.newStatus } : p)),
+      );
+      // Refresh the audit log shown inside the post
+      queryClient.invalidateQueries({ queryKey: ["posts", payload.id, "logs"] });
+
+      // Toast so the user knows without opening notifications
+      if (payload.newStatus === "Published") {
+        toast.success("Post published");
+      } else if (payload.newStatus === "Rejected") {
+        toast.error("Post rejected", { description: payload.reason ?? undefined });
+      } else if (payload.newStatus === "Error") {
+        toast.warning("Moderation error — your post will be reviewed manually");
+      } else if (payload.newStatus === "Flagged") {
+        toast.warning("Your post has been flagged for re-review");
+      }
     });
 
     connection.start().catch((err) =>
@@ -88,7 +122,7 @@ export function useNotifications() {
       connection.stop();
       connectionRef.current = null;
     };
-  }, [currentUser]);
+  }, [currentUser, queryClient]);
 
   const markRead = (id: string) =>
     setNotifications((prev) =>

@@ -2,8 +2,9 @@ import * as React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { Bell, Home, LogOut, Pencil, Search, Settings as SettingsIcon } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { postsApi } from "@/api/posts";
+import type { Post } from "@/types/Post";
 
 import {
   Sidebar,
@@ -37,7 +38,15 @@ export const AppSidebar = ({
 
   const createPostMutation = useMutation({
     mutationFn: (content: string) => postsApi.create({ content }),
-    onSuccess: () => {
+    onSuccess: (newPost) => {
+      // Prepend into cache so SignalR can update it before the refetch lands
+      queryClient.setQueriesData<InfiniteData<Post[]>>(
+        { queryKey: ["feed"] },
+        (old) => {
+          if (!old) return old;
+          return { ...old, pages: [[newPost, ...old.pages[0]], ...old.pages.slice(1)] };
+        },
+      );
       queryClient.invalidateQueries({ queryKey: ["feed"] });
       toast.success("Post submitted", { description: "Your post is pending review." });
       navigate("/");

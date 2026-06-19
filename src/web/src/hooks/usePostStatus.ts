@@ -3,7 +3,7 @@ import type { PostStatus } from "@/types/Post";
 import { postsApi } from "@/api";
 
 const POLL_INTERVAL_MS = 5_000;
-const TERMINAL_STATUSES: PostStatus[] = ["Published", "Rejected"];
+const TERMINAL_STATUSES: PostStatus[] = ["Published", "Rejected", "Error"];
 
 export function usePostStatus(postId: string, initialStatus: PostStatus) {
   const [status, setStatus] = useState<PostStatus>(initialStatus);
