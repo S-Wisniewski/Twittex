@@ -113,6 +113,8 @@ namespace ModerationSystem.Api.Services.Ai
                 using var document = JsonDocument.Parse(responseBody);
                 var text = document.RootElement.GetProperty("content")[0].GetProperty("text").GetString()?.Trim() ?? "";
 
+                Console.WriteLine($"\n>>> [AiService RAW] {text}\n");
+
                 if (text.Contains("Flagged", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine("\n>>> [AiService] Re-evaluation: Model evaluated content as Flagged.\n");
