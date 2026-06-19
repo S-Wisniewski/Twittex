@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           command_timeout: 20m
-          envs: CONNECTION_STRING,COGNITO_AUTHORITY,COGNITO_AUDIENCE,COGNITO_REGION,VITE_API_URL
+          envs: CONNECTION_STRING,COGNITO_AUTHORITY,COGNITO_AUDIENCE,COGNITO_REGION,COGNITO_USER_POOL_ID,COGNITO_CLIENT_ID,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_REGION,BEDROCK_MODEL_ID,BEDROCK_REGION,VITE_API_URL
           script: |
             cd /home/ubuntu/Twittex
 
@@ -29,6 +29,13 @@ jobs:
             Cognito__Authority=$COGNITO_AUTHORITY
             Cognito__Audience=$COGNITO_AUDIENCE
             Cognito__Region=$COGNITO_REGION
+            Cognito__UserPoolId=$COGNITO_USER_POOL_ID
+            Cognito__ClientId=$COGNITO_CLIENT_ID
+            AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            AWS_REGION=$AWS_REGION
+            Bedrock__ModelId=$BEDROCK_MODEL_ID
+            Bedrock__Region=$BEDROCK_REGION
             VITE_API_URL=$VITE_API_URL
             EOF
 
@@ -41,4 +48,11 @@ jobs:
           COGNITO_AUTHORITY: ${{ secrets.COGNITO_AUTHORITY }}
           COGNITO_AUDIENCE: ${{ secrets.COGNITO_AUDIENCE }}
           COGNITO_REGION: ${{ secrets.COGNITO_REGION }}
+          COGNITO_USER_POOL_ID: ${{ secrets.COGNITO_USER_POOL_ID }}
+          COGNITO_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}
+          BEDROCK_REGION: ${{ secrets.BEDROCK_REGION }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
