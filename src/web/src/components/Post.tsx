@@ -1,4 +1,4 @@
-import { Flag, Heart, MessageSquare, Trash2 } from "lucide-react";
+import { Bookmark, Flag, Heart, Link2, MessageSquare, Trash2 } from "lucide-react";
 import {
   Item,
   ItemActions,
@@ -9,6 +9,7 @@ import {
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useRelativeTime } from "@/hooks/useRelativeTime";
 import { useNavigate } from "react-router";
 import UserAvatar from "./UserAvatar";
 import { useAuth } from "@/contexts/useAuth";
@@ -40,6 +41,7 @@ type PostProps = {
   createdAt: string;
   content: string;
   isLiked: boolean;
+  isBookmarked: boolean;
   status: PostStatus;
   likeCount: number;
   commentCount: number;
@@ -67,30 +69,6 @@ const REVIEW_TYPE_KEYS: Record<ReviewType, string> = {
   Misinformation: "post.reportReasons.misinfo",
   Other: "post.reportReasons.other",
 };
-
-function formatSmartDate(iso: string) {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const isToday = now.toDateString() === date.toDateString();
-  const isThisYear = now.getFullYear() === date.getFullYear();
-
-  if (isToday) {
-    if (diffSec < 60) return `${diffSec}s ago`;
-    if (diffMin < 60) return `${diffMin}m ago`;
-    return `${diffHour}h ago`;
-  }
-  if (isThisYear)
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -121,6 +99,8 @@ const Post = ({
   const post = camePost;
   const [isLiked, setIsLiked] = useState(camePost.isLiked);
   const [likeCount, setLikeCount] = useState(camePost.likeCount);
+  const [isBookmarked, setIsBookmarked] = useState(camePost.isBookmarked);
+  const relativeTime = useRelativeTime(post.createdAt);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const deleteMutation = useMutation({
@@ -356,10 +336,48 @@ const Post = ({
           <span className="text-sm text-muted-foreground tabular-nums">
             {formatCount(post.commentCount)}
           </span>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="cursor-pointer text-muted-foreground ml-1"
+            onClick={() => {
+              const url = `${window.location.origin}/${post.userName}/post/${post.id}`;
+              navigator.clipboard.writeText(url).then(() =>
+                toast.success(t("post.toasts.linkCopied")),
+              );
+            }}
+          >
+            <Link2 className="size-4" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="cursor-pointer text-muted-foreground ml-1"
+            onClick={() =>
+              gate(() => {
+                const wasBookmarked = isBookmarked;
+                setIsBookmarked(!isBookmarked);
+                (wasBookmarked ? postsApi.unbookmark : postsApi.bookmark)(post.id).then(() => {
+                  queryClient.invalidateQueries({ queryKey: ["bookmarks", "me"] });
+                }).catch(() => {
+                  setIsBookmarked(wasBookmarked);
+                });
+              })
+            }
+          >
+            <Bookmark
+              className={cn(
+                "size-4",
+                isBookmarked && "fill-amber-500 stroke-amber-500 dark:fill-amber-400 dark:stroke-amber-400",
+              )}
+            />
+          </Button>
         </ItemActions>
 
         <span className="text-sm text-muted-foreground">
-          {formatSmartDate(post.createdAt)}
+          {relativeTime}
         </span>
       </ItemFooter>
     </Item>

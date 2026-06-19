@@ -26,6 +26,8 @@ namespace ModerationSystem.Api.Models.Entities
 
         public ICollection<PostLikes> Likes { get; set; } = new List<PostLikes>();
 
+        public ICollection<PostBookmarks> Bookmarks { get; set; } = new List<PostBookmarks>();
+
         public ICollection<Log> Logs { get; set; } = new List<Log>();
     }
 }

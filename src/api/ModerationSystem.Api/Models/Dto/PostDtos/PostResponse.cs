@@ -13,6 +13,7 @@ namespace ModerationSystem.Api.Models.Dto.PostDtos
         public string Content { get; set; } = string.Empty;
         public string UserAvatarUrl { get; set; } = string.Empty;
         public bool IsLiked { get; set; }
+        public bool IsBookmarked { get; set; }
         public PostStatus Status { get; set; }
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }

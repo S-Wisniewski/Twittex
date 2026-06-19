@@ -56,6 +56,12 @@ const Profile = () => {
     enabled: !!user?.id,
   });
 
+  const { data: bookmarks = [] } = useQuery({
+    queryKey: ["bookmarks", "me"],
+    queryFn: () => postsApi.getMyBookmarks(),
+    enabled: isOwnProfile,
+  });
+
   const followMutation = useMutation({
     mutationFn: () =>
       user!.youFollow ? usersApi.unfollow(user!.id) : usersApi.follow(user!.id),
@@ -199,6 +205,14 @@ const Profile = () => {
           >
             {t("profile.replies")}
           </TabsTrigger>
+          {isOwnProfile && (
+            <TabsTrigger
+              value="bookmarks"
+              className="flex-1 rounded-full border border-border data-active:bg-primary data-active:text-primary-foreground data-active:border-primary"
+            >
+              {t("profile.bookmarks")}
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="posts">
@@ -234,6 +248,21 @@ const Profile = () => {
             )}
           </div>
         </TabsContent>
+
+        {isOwnProfile && (
+          <TabsContent value="bookmarks">
+            <div className="flex flex-col gap-4 mt-4">
+              {bookmarks.map((post) => (
+                <Post key={post.id} post={post} isAuthor />
+              ))}
+              {bookmarks.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  {t("profile.noBookmarks")}
+                </p>
+              )}
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

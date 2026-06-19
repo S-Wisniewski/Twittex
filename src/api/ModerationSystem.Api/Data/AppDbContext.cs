@@ -11,6 +11,8 @@ namespace ModerationSystem.Api.Data
 
         public DbSet<PostLikes> PostLikes { get; set; }
 
+        public DbSet<PostBookmarks> PostBookmarks { get; set; }
+
         public DbSet<UserFollows> UserFollows { get; set; }
 
         public DbSet<Report> Reports { get; set; }
@@ -84,6 +86,21 @@ namespace ModerationSystem.Api.Data
                 entity.HasOne(pl => pl.Post)
                     .WithMany(p => p.Likes)
                     .HasForeignKey(pl => pl.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PostBookmarks>(entity =>
+            {
+                entity.HasKey(pb => new { pb.CognitoUserId, pb.PostId });
+
+                entity.HasOne(pb => pb.User)
+                    .WithMany(u => u.BookmarkedPosts)
+                    .HasForeignKey(pb => pb.CognitoUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(pb => pb.Post)
+                    .WithMany(p => p.Bookmarks)
+                    .HasForeignKey(pb => pb.PostId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 

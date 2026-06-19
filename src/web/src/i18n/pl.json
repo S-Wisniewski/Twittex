@@ -71,7 +71,9 @@
     "autoRefresh": "Aktywne posty odświeżają się co 5s do osiągnięcia statusu końcowego.",
     "posts": "Posty",
     "replies": "Odpowiedzi",
-    "noReplies": "Brak odpowiedzi."
+    "noReplies": "Brak odpowiedzi.",
+    "bookmarks": "Zakładki",
+    "noBookmarks": "Brak zakładek."
   },
   "postPage": {
     "comment_one": "komentarz",
@@ -112,7 +114,8 @@
       "deleteFailed": "Nie udało się usunąć postu. Spróbuj ponownie.",
       "reported": "Post zgłoszony",
       "reportedDesc": "Powód: {{type}}. Nasz zespół wkrótce to sprawdzi.",
-      "reportFailed": "Nie udało się przesłać zgłoszenia. Spróbuj ponownie."
+      "reportFailed": "Nie udało się przesłać zgłoszenia. Spróbuj ponownie.",
+      "linkCopied": "Link skopiowany"
     }
   },
   "postStatus": {

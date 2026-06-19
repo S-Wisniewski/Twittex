@@ -46,4 +46,11 @@ export const postsApi = {
 
   getMyPostStatuses: () =>
     apiClient.get<Post[]>(`/api/users/me/post-statuses`),
+
+  bookmark: (id: string) => apiClient.post<void>(`/api/posts/${id}/bookmarks`),
+
+  unbookmark: (id: string) => apiClient.delete<void>(`/api/posts/${id}/bookmarks`),
+
+  getMyBookmarks: (page = 1, pageSize = 15) =>
+    apiClient.get<Post[]>(`/api/users/me/bookmarks?page=${page}&pageSize=${pageSize}`),
 };

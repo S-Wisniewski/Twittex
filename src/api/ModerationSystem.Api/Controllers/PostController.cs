@@ -138,5 +138,39 @@ namespace ModerationSystem.Api.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("{id}/bookmarks")]
+        public async Task<IActionResult> BookmarkPost(int id)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var success = await _postService.BookmarkPostAsync(id, currentUserId);
+            if (!success) return NotFound();
+
+            return Ok();
+        }
+
+        [HttpDelete("{id}/bookmarks")]
+        public async Task<IActionResult> UnbookmarkPost(int id)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var success = await _postService.UnbookmarkPostAsync(id, currentUserId);
+            if (!success) return NotFound();
+
+            return NoContent();
+        }
+
+        [HttpGet("~/api/users/me/bookmarks")]
+        public async Task<IActionResult> GetMyBookmarks([FromQuery] int page = 1, [FromQuery] int pageSize = 15)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var bookmarks = await _postService.GetBookmarksAsync(currentUserId, page, pageSize);
+            return Ok(bookmarks);
+        }
     }
 }

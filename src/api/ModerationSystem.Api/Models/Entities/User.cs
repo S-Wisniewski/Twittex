@@ -23,6 +23,7 @@ namespace ModerationSystem.Api.Models.Entities
                 public string? AvatarUrl { get; set; }
                 public ICollection<Post> Posts { get; set; } = new List<Post>();
                 public ICollection<PostLikes> LikedPosts { get; set; } = new List<PostLikes>();
+                public ICollection<PostBookmarks> BookmarkedPosts { get; set; } = new List<PostBookmarks>();
                 public ICollection<UserFollows> Followers { get; set; } = new List<UserFollows>();
                 public ICollection<UserFollows> Following { get; set; } = new List<UserFollows>();
                 public ICollection<Log> Logs { get; set; } = new List<Log>();

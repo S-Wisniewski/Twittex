@@ -20,6 +20,7 @@ export type Post = {
   content: string;
   userAvatarUrl: string;
   isLiked: boolean;
+  isBookmarked: boolean;
   status: PostStatus;
   likeCount: number;
   commentCount: number;
@@ -45,6 +46,7 @@ export const mockPost: Post = {
   userAvatarUrl:
     "https://png.pngtree.com/png-clipart/20240830/original/pngtree-oberhasli-goat-png-image_15883761.png",
   isLiked: false,
+  isBookmarked: false,
   status: "Published",
   likeCount: 42,
   commentCount: 7,

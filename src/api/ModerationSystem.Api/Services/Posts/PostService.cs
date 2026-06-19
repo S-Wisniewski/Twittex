@@ -41,6 +41,7 @@ namespace ModerationSystem.Api.Services.Posts
             var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
+                .Include(p => p.Bookmarks)
                 .Include(p => p.Replies)
                 .Where(p => p.ParentPostId == null && p.Status != PostStatus.Rejected && p.Status != PostStatus.Error)
                 .OrderByDescending(p => p.CreatedAt)
@@ -56,6 +57,7 @@ namespace ModerationSystem.Api.Services.Posts
             var post = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
+                .Include(p => p.Bookmarks)
                 .Include(p => p.Replies)
                 .FirstOrDefaultAsync(p => p.Id == postId);
 
@@ -69,6 +71,7 @@ namespace ModerationSystem.Api.Services.Posts
             var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
+                .Include(p => p.Bookmarks)
                 .Include(p => p.Replies)
                 .Where(p => p.CognitoUserId == userId && p.ParentPostId == null
                     && (currentUserId == userId || p.Status != PostStatus.Rejected))
@@ -95,6 +98,7 @@ namespace ModerationSystem.Api.Services.Posts
 
             await _context.Entry(post).Reference(p => p.User).LoadAsync();
             await _context.Entry(post).Collection(p => p.Likes).LoadAsync();
+            await _context.Entry(post).Collection(p => p.Bookmarks).LoadAsync();
             await _context.Entry(post).Collection(p => p.Replies).LoadAsync();
 
             // Return Pending to the client immediately; AI runs in the background
@@ -185,17 +189,74 @@ namespace ModerationSystem.Api.Services.Posts
             return true;
         }
 
+        public async Task<bool> BookmarkPostAsync(int postId, string userId)
+        {
+            var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == postId);
+            if (post == null) return false;
+
+            var existing = await _context.PostBookmarks
+                .FirstOrDefaultAsync(b => b.PostId == postId && b.CognitoUserId == userId);
+
+            if (existing == null)
+            {
+                _context.PostBookmarks.Add(new PostBookmarks
+                {
+                    PostId = postId,
+                    CognitoUserId = userId
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+
+        public async Task<bool> UnbookmarkPostAsync(int postId, string userId)
+        {
+            var existing = await _context.PostBookmarks
+                .FirstOrDefaultAsync(b => b.PostId == postId && b.CognitoUserId == userId);
+
+            if (existing != null)
+            {
+                _context.PostBookmarks.Remove(existing);
+                await _context.SaveChangesAsync();
+            }
+
+            return true;
+        }
+
+        public async Task<IEnumerable<PostResponse>> GetBookmarksAsync(string userId, int page = 1, int pageSize = 15)
+        {
+            var posts = await _context.Posts
+                .Include(p => p.User)
+                .Include(p => p.Likes)
+                .Include(p => p.Bookmarks)
+                .Include(p => p.Replies)
+                .Where(p => p.Bookmarks.Any(b => b.CognitoUserId == userId))
+                .OrderByDescending(p => p.Bookmarks
+                    .Where(b => b.CognitoUserId == userId)
+                    .Select(b => b.CreatedAt)
+                    .FirstOrDefault())
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return posts.Select(p => MapToPostResponse(p, userId));
+        }
+
         public async Task<IEnumerable<ReplyThreadResponse>> GetUserRepliesAsync(string userId, string? currentUserId = null)
         {
             var replies = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
+                .Include(p => p.Bookmarks)
                 .Include(p => p.Replies)
                 .Include(p => p.ParentPost).ThenInclude(pp => pp!.User)
                 .Include(p => p.ParentPost).ThenInclude(pp => pp!.Likes)
+                .Include(p => p.ParentPost).ThenInclude(pp => pp!.Bookmarks)
                 .Include(p => p.ParentPost).ThenInclude(pp => pp!.Replies)
                 .Include(p => p.ParentPost).ThenInclude(pp => pp!.ParentPost).ThenInclude(ppp => ppp!.User)
                 .Include(p => p.ParentPost).ThenInclude(pp => pp!.ParentPost).ThenInclude(ppp => ppp!.Likes)
+                .Include(p => p.ParentPost).ThenInclude(pp => pp!.ParentPost).ThenInclude(ppp => ppp!.Bookmarks)
                 .Include(p => p.ParentPost).ThenInclude(pp => pp!.ParentPost).ThenInclude(ppp => ppp!.Replies)
                 .Where(p => p.CognitoUserId == userId && p.ParentPostId != null)
                 .OrderByDescending(p => p.CreatedAt)
@@ -223,6 +284,7 @@ namespace ModerationSystem.Api.Services.Posts
             var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
+                .Include(p => p.Bookmarks)
                 .Include(p => p.Replies)
                 .Where(p => p.ParentPostId == postId)
                 .OrderBy(p => p.CreatedAt)
@@ -244,6 +306,7 @@ namespace ModerationSystem.Api.Services.Posts
                 var node = await _context.Posts
                     .Include(p => p.User)
                     .Include(p => p.Likes)
+                    .Include(p => p.Bookmarks)
                     .Include(p => p.Replies)
                     .FirstOrDefaultAsync(p => p.Id == nodeId.Value);
                 if (node == null) break;
@@ -269,6 +332,7 @@ namespace ModerationSystem.Api.Services.Posts
             var posts = await _context.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
+                .Include(p => p.Bookmarks)
                 .Include(p => p.Replies)
                 .Where(p => p.CognitoUserId == userId && p.Status != PostStatus.Published)
                 .OrderByDescending(p => p.CreatedAt)
@@ -281,6 +345,7 @@ namespace ModerationSystem.Api.Services.Posts
         {
             var response = _mapper.Map<PostResponse>(post);
             response.IsLiked = currentUserId != null && post.Likes.Any(l => l.CognitoUserId == currentUserId);
+            response.IsBookmarked = currentUserId != null && post.Bookmarks.Any(b => b.CognitoUserId == currentUserId);
             return response;
         }
     }
