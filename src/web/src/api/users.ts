@@ -27,4 +27,7 @@ export const usersApi = {
 
   deleteAccount: (userId: string) =>
     apiClient.delete<void>(`/api/users/${userId}`),
+
+  getAvatarUploadUrl: () =>
+    apiClient.post<{ uploadUrl: string; publicUrl: string }>("/api/users/me/avatar-upload-url", {}),
 };

@@ -29,6 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUser(user);
   }
 
+  async function refreshUser() {
+    const user = await usersApi.getMe();
+    setCurrentUser(user);
+  }
+
   async function logout() {
     try {
       await authApi.logOut();
@@ -40,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isLoading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

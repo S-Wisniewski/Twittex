@@ -10,6 +10,7 @@ using ModerationSystem.Api.Services.Users;
 using ModerationSystem.Api.Services.Auth;
 using ModerationSystem.Api.Services.Ai;
 using ModerationSystem.Api.Services.Reports;
+using ModerationSystem.Api.Services.Storage;
 
 namespace ModerationSystem.Api.Extensions
 {
@@ -31,6 +32,7 @@ namespace ModerationSystem.Api.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAiService, AiService>();
             services.AddScoped<IReportService, ReportService>();
+            services.AddSingleton<IStorageService, StorageService>();
             services.AddCognitoClient(config);
 
             services.AddSignalR();

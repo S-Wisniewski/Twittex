@@ -69,7 +69,7 @@ const PostTimeline = ({ events, className }: PostTimelineProps) => {
             <li key={event.id} className="flex gap-3 relative">
               {/* vertical line */}
               {i < events.length - 1 && (
-                <div className="absolute left-[7px] top-4 bottom-0 w-px bg-border" />
+                <div className="absolute left-1.75 top-4 bottom-0 w-px bg-border" />
               )}
 
               {/* dot */}

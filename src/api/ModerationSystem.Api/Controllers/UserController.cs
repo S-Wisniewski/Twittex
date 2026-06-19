@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModerationSystem.Api.Models.Dto.UserDtos;
 using ModerationSystem.Api.Services.Users;
+using ModerationSystem.Api.Services.Storage;
 using System.Security.Claims;
 
 namespace ModerationSystem.Api.Controllers
@@ -66,6 +67,16 @@ namespace ModerationSystem.Api.Controllers
             string? currentUserId = GetCurrentUserId();
             var users = await _userService.GetFollowingAsync(userId, currentUserId);
             return Ok(users);
+        }
+
+        [HttpPost("me/avatar-upload-url")]
+        public async Task<IActionResult> GetAvatarUploadUrl([FromServices] IStorageService storageService)
+        {
+            string? currentUserId = GetCurrentUserId();
+            if (currentUserId == null) return Unauthorized();
+
+            var (uploadUrl, publicUrl) = await storageService.GenerateAvatarUploadUrlAsync(currentUserId);
+            return Ok(new { uploadUrl, publicUrl });
         }
 
         [HttpGet("me")]

@@ -40,7 +40,7 @@ export function ReplyThreadView({ thread, isOwnProfile }: Props) {
         <div key={ancestor.id} className="relative">
           {i !== 0 ? (
             <div
-              className="absolute top-0 h-6 w-0.5 bg-border pointer-events-none z-10"
+              className="absolute top-0 h-6 w-0.5 bg-border pointer-events-none"
               style={{ left: THREAD_LINE_X }}
             />
           ) : null}
@@ -64,7 +64,7 @@ export function ReplyThreadView({ thread, isOwnProfile }: Props) {
         {/* Short line entering the reply card from the top */}
         {hasAncestors && (
           <div
-            className="absolute top-0 h-6 w-0.5 bg-border pointer-events-none z-10"
+            className="absolute top-0 h-6 w-0.5 bg-border pointer-events-none"
             style={{ left: THREAD_LINE_X }}
           />
         )}

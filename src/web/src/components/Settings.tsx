@@ -1,4 +1,4 @@
-import { Lock, Settings as SettingsIcon, User } from "lucide-react";
+import { Lock, Settings as SettingsIcon, Upload, User } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { ModeToggle } from "./mode-toggle";
@@ -7,7 +7,8 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Separator } from "./ui/separator";
 import UserAvatar from "./UserAvatar";
-import { useState } from "react";
+import AvatarCropDialog from "./AvatarCropDialog";
+import { useRef, useState } from "react";
 import { useAuth } from "@/contexts/useAuth";
 import { usersApi } from "@/api/users";
 import { authApi } from "@/api/auth";
@@ -26,13 +27,15 @@ const settingsTabs = [
 ];
 
 const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [displayName, setDisplayName] = useState(currentUser?.userName ?? "");
   const [username, setUsername] = useState(currentUser?.userName ?? "");
   const [bio, setBio] = useState(currentUser?.content ?? "");
   const [avatarUrl, setAvatarUrl] = useState(currentUser?.userAvatarUrl ?? "");
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -40,6 +43,30 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
 
   const passwordMismatch =
     newPassword && confirmPassword && newPassword !== confirmPassword;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setCropSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleAvatarSave = async (blob: Blob) => {
+    if (!currentUser) return;
+    const { uploadUrl, publicUrl } = await usersApi.getAvatarUploadUrl();
+    await fetch(uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: { "Content-Type": "image/jpeg" },
+    });
+    await usersApi.updateProfile(currentUser.id, { avatarUrl: publicUrl });
+    await refreshUser();
+    setAvatarUrl(publicUrl);
+    setCropSrc(null);
+    toast.success("Avatar updated");
+  };
 
   const handleSaveProfile = async () => {
     if (!currentUser) return;
@@ -50,6 +77,7 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
         bio,
         avatarUrl,
       });
+      await refreshUser();
       toast.success("Profile saved");
       setIsOpen(false);
     } catch {
@@ -82,241 +110,271 @@ const SettingsForm = ({ setIsOpen }: { setIsOpen: (open: boolean) => void }) => 
   };
 
   return (
-    <Tabs defaultValue={"general"} orientation="vertical">
-      <TabsList
-        className={"bg-sidebar w-1/4 min-h-full justify-start p-4"}
-        style={{ borderRadius: 0 }}
-      >
-        {settingsTabs.map((item) => (
-          <TabsTrigger
-            key={item.key}
-            value={item.key}
-            className={"max-h-fit gap-2"}
-          >
-            {item.icon}
-            {item.value}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <>
+      {cropSrc && (
+        <AvatarCropDialog
+          imageSrc={cropSrc}
+          open={!!cropSrc}
+          onClose={() => setCropSrc(null)}
+          onSave={handleAvatarSave}
+        />
+      )}
 
-      {/* ── General ── */}
-      <TabsContent value={"general"} className={"p-6 space-y-6 flex-1"}>
-        <div>
-          <h3 className="font-semibold text-base mb-1">General</h3>
-          <p className="text-sm text-muted-foreground">
-            App preferences and display settings.
-          </p>
-        </div>
-        <Separator />
+      <Tabs defaultValue={"general"} orientation="vertical">
+        <TabsList
+          className={"bg-sidebar w-1/4 min-h-full justify-start p-4"}
+          style={{ borderRadius: 0 }}
+        >
+          {settingsTabs.map((item) => (
+            <TabsTrigger
+              key={item.key}
+              value={item.key}
+              className={"max-h-fit gap-2"}
+            >
+              {item.icon}
+              {item.value}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-        <div className="flex items-center justify-between">
+        {/* ── General ── */}
+        <TabsContent value={"general"} className={"p-6 space-y-6 flex-1"}>
           <div>
-            <p className="text-sm font-medium">Theme</p>
-            <p className="text-xs text-muted-foreground">
-              Switch between light and dark mode.
+            <h3 className="font-semibold text-base mb-1">General</h3>
+            <p className="text-sm text-muted-foreground">
+              App preferences and display settings.
             </p>
           </div>
-          <ModeToggle />
-        </div>
+          <Separator />
 
-        <Separator />
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Theme</p>
+              <p className="text-xs text-muted-foreground">
+                Switch between light and dark mode.
+              </p>
+            </div>
+            <ModeToggle />
+          </div>
 
-        <div className="flex items-center justify-between">
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Language</p>
+              <p className="text-xs text-muted-foreground">
+                Display language for the interface.
+              </p>
+            </div>
+            <select className="rounded-xl border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring transition-colors">
+              <option value="en">English</option>
+              <option value="pl">Polish</option>
+              <option value="de">German</option>
+              <option value="fr">French</option>
+            </select>
+          </div>
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Notifications</p>
+              <p className="text-xs text-muted-foreground">
+                Email notifications for new followers and likes.
+              </p>
+            </div>
+            <input type="checkbox" className="size-4 cursor-pointer" defaultChecked />
+          </div>
+        </TabsContent>
+
+        {/* ── Profile ── */}
+        <TabsContent value={"profile"} className={"p-6 space-y-6 flex-1"}>
           <div>
-            <p className="text-sm font-medium">Language</p>
-            <p className="text-xs text-muted-foreground">
-              Display language for the interface.
+            <h3 className="font-semibold text-base mb-1">Profile</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage your public information.
             </p>
           </div>
-          <select className="rounded-xl border border-input bg-input/30 px-3 py-2 text-sm outline-none focus-visible:border-ring transition-colors">
-            <option value="en">English</option>
-            <option value="pl">Polish</option>
-            <option value="de">German</option>
-            <option value="fr">French</option>
-          </select>
-        </div>
+          <Separator />
 
-        <Separator />
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Notifications</p>
-            <p className="text-xs text-muted-foreground">
-              Email notifications for new followers and likes.
-            </p>
-          </div>
-          <input type="checkbox" className="size-4 cursor-pointer" defaultChecked />
-        </div>
-      </TabsContent>
-
-      {/* ── Profile ── */}
-      <TabsContent value={"profile"} className={"p-6 space-y-6 flex-1"}>
-        <div>
-          <h3 className="font-semibold text-base mb-1">Profile</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your public information.
-          </p>
-        </div>
-        <Separator />
-
-        <div className="flex items-center gap-4">
-          <UserAvatar url={avatarUrl} name={username} size="medium" />
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium">Avatar</p>
-            <p className="text-xs text-muted-foreground">
-              Paste a URL to update your avatar.
-            </p>
-            <Input
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
-              className="mt-1 w-72"
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <UserAvatar url={avatarUrl} name={username} size="medium" />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                aria-label="Upload photo"
+              >
+                <Upload className="size-5 text-white" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-medium">Avatar</p>
+              <p className="text-xs text-muted-foreground">
+                Upload a photo. It will be cropped to a square.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-fit mt-1"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="size-3.5" />
+                Upload photo
+              </Button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
             />
           </div>
-        </div>
 
-        <Separator />
+          <Separator />
 
-        <div className="grid gap-4 max-w-md">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Display name</label>
-            <Input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Your name"
-              maxLength={50}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Username</label>
-            <div className="flex items-center gap-1">
-              <span className="text-sm text-muted-foreground">@</span>
+          <div className="grid gap-4 max-w-md">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Display name</label>
               <Input
-                value={username}
-                onChange={(e) =>
-                  setUsername(e.target.value.replace(/[^a-z0-9_]/gi, ""))
-                }
-                placeholder="username"
-                maxLength={30}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your name"
+                maxLength={50}
               />
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Bio</label>
-            <Textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell the world something about yourself"
-              maxLength={160}
-            />
-            <span className="text-xs text-muted-foreground text-right">
-              {bio.length}/160
-            </span>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button onClick={handleSaveProfile}>Save changes</Button>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancel
-          </Button>
-        </div>
-      </TabsContent>
-
-      {/* ── Security ── */}
-      <TabsContent value={"security"} className={"p-6 space-y-6 flex-1"}>
-        <div>
-          <h3 className="font-semibold text-base mb-1">Security</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your password and account security.
-          </p>
-        </div>
-        <Separator />
-
-        <div className="flex flex-col gap-4 max-w-md">
-          <p className="text-sm font-medium">Change password</p>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-muted-foreground">
-              Current password
-            </label>
-            <Input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-muted-foreground">
-              New password
-            </label>
-            <Input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-muted-foreground">
-              Confirm new password
-            </label>
-            <Input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              aria-invalid={!!passwordMismatch}
-            />
-            {passwordMismatch && (
-              <p className="text-xs text-destructive">
-                Passwords do not match.
-              </p>
-            )}
-          </div>
-
-          <Button
-            disabled={
-              !currentPassword ||
-              !newPassword ||
-              !confirmPassword ||
-              !!passwordMismatch
-            }
-            onClick={handleChangePassword}
-          >
-            Update password
-          </Button>
-        </div>
-
-        <Separator />
-
-        <div className="flex flex-col gap-3 max-w-md">
-          <p className="text-sm font-medium">Danger zone</p>
-          <div className="flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-            <div>
-              <p className="text-sm font-medium text-destructive">
-                Delete account
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Permanently delete your account and all data.
-              </p>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Username</label>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-muted-foreground">@</span>
+                <Input
+                  value={username}
+                  onChange={(e) =>
+                    setUsername(e.target.value.replace(/[^a-z0-9_]/gi, ""))
+                  }
+                  placeholder="username"
+                  maxLength={30}
+                />
+              </div>
             </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDeleteAccount}
-            >
-              Delete
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Bio</label>
+              <Textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Tell the world something about yourself"
+                maxLength={160}
+              />
+              <span className="text-xs text-muted-foreground text-right">
+                {bio.length}/160
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={handleSaveProfile}>Save changes</Button>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              Cancel
             </Button>
           </div>
-        </div>
-      </TabsContent>
-    </Tabs>
+        </TabsContent>
+
+        {/* ── Security ── */}
+        <TabsContent value={"security"} className={"p-6 space-y-6 flex-1"}>
+          <div>
+            <h3 className="font-semibold text-base mb-1">Security</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage your password and account security.
+            </p>
+          </div>
+          <Separator />
+
+          <div className="flex flex-col gap-4 max-w-md">
+            <p className="text-sm font-medium">Change password</p>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm text-muted-foreground">
+                Current password
+              </label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm text-muted-foreground">
+                New password
+              </label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm text-muted-foreground">
+                Confirm new password
+              </label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                aria-invalid={!!passwordMismatch}
+              />
+              {passwordMismatch && (
+                <p className="text-xs text-destructive">
+                  Passwords do not match.
+                </p>
+              )}
+            </div>
+
+            <Button
+              disabled={
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword ||
+                !!passwordMismatch
+              }
+              onClick={handleChangePassword}
+            >
+              Update password
+            </Button>
+          </div>
+
+          <Separator />
+
+          <div className="flex flex-col gap-3 max-w-md">
+            <p className="text-sm font-medium">Danger zone</p>
+            <div className="flex items-center justify-between rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+              <div>
+                <p className="text-sm font-medium text-destructive">
+                  Delete account
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Permanently delete your account and all data.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteAccount}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </>
   );
 };
 
