@@ -9,9 +9,8 @@ const HUB_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:5260"}/hubs
 
 function statusReason(status: PostStatus): string {
   switch (status) {
-    case "Flagged":  return "Your post was flagged by automated content moderation.";
-    case "Rejected": return "Your post was rejected for policy violations.";
-    case "Review":   return "Your post has been escalated to manual review.";
+    case "Flagged":  return "Your post was reported by the community and is pending re-review.";
+    case "Rejected": return "Your post was rejected by automated content moderation for policy violations.";
     case "Error":    return "Automated moderation could not process this post. It will be reviewed manually.";
     default:         return "Your post is awaiting automated review.";
   }
@@ -34,7 +33,7 @@ export function useNotifications() {
         oldStatus: "Pending",
         newStatus: post.status,
         reason: statusReason(post.status),
-        triggeredBy: "system" as NotificationTrigger,
+        triggeredBy: "system" as const,
         createdAt: post.createdAt,
         read: false,
       }));

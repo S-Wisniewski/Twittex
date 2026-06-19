@@ -38,7 +38,7 @@ namespace ModerationSystem.Api.Services.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Replies)
-                .Where(p => p.ParentPostId == null)
+                .Where(p => p.ParentPostId == null && p.Status != PostStatus.Rejected && p.Status != PostStatus.Error)
                 .OrderByDescending(p => p.CreatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -56,6 +56,7 @@ namespace ModerationSystem.Api.Services.Posts
                 .FirstOrDefaultAsync(p => p.Id == postId);
 
             if (post == null) return null;
+            if (post.Status == PostStatus.Rejected && post.CognitoUserId != currentUserId) return null;
             return MapToPostResponse(post, currentUserId);
         }
 
@@ -65,20 +66,18 @@ namespace ModerationSystem.Api.Services.Posts
                 .Include(p => p.User)
                 .Include(p => p.Likes)
                 .Include(p => p.Replies)
-                .Where(p => p.CognitoUserId == userId && p.ParentPostId == null)
+                .Where(p => p.CognitoUserId == userId && p.ParentPostId == null
+                    && (currentUserId == userId || p.Status != PostStatus.Rejected))
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
-
 
             return posts.Select(p => MapToPostResponse(p, currentUserId));
         }
 
         public async Task<PostResponse> CreatePostAsync(CreatePostRequest request, string userId)
         {
-            // Handle ParentPostId being 0 (which some frontends might send instead of null)
             int? parentPostId = request.ParentPostId == 0 ? null : request.ParentPostId;
 
-            // Moderate content using AI
             var status = await _aiService.ModerateContentAsync(request.Content);
 
             var post = new Post
@@ -90,26 +89,23 @@ namespace ModerationSystem.Api.Services.Posts
             };
 
             _context.Posts.Add(post);
-            _auditService.AddLog(
-               userId,
-               $"Post created: {request.Content.Substring(0, Math.Min(50, request.Content.Length))}..."
-           );
-
             await _context.SaveChangesAsync();
-            await _notificationsService.NotifyModeratorsOfPendingPost(post);
+
+            var aiReason = post.Status switch
+            {
+                PostStatus.Published => "Automated review passed. Your post is now live.",
+                PostStatus.Rejected  => "Your post was rejected by automated content moderation for policy violations.",
+                _                    => "An error occurred during automated review. Your post will be reviewed manually."
+            };
+
+            _auditService.AddStatusLog(userId, post.Id, PostStatus.Pending, status, aiReason, "system");
+            await _context.SaveChangesAsync();
 
             await _context.Entry(post).Reference(p => p.User).LoadAsync();
             await _context.Entry(post).Collection(p => p.Likes).LoadAsync();
             await _context.Entry(post).Collection(p => p.Replies).LoadAsync();
 
-            var aiReason = post.Status switch
-            {
-                PostStatus.Published => "Automated review passed. Your post is now live.",
-                PostStatus.Flagged   => "Your post was flagged by automated content moderation and is pending manual review.",
-                PostStatus.Rejected  => "Your post was rejected by automated content moderation for policy violations.",
-                _                    => "Your post was submitted and is awaiting review."
-            };
-            await _notificationsService.NotifyUserOfPostStatusChange(post, oldStatus: null, reason: aiReason, triggeredBy: "llm");
+            await _notificationsService.NotifyUserOfPostStatusChange(post, oldStatus: "Pending", reason: aiReason, triggeredBy: "system");
 
             return MapToPostResponse(post, userId);
         }

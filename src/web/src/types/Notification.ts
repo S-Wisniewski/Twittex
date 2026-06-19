@@ -1,6 +1,6 @@
 import type { PostStatus } from "./Post";
 
-export type NotificationTrigger = "llm" | "moderator" | "community" | "system";
+export type NotificationTrigger = "system" | "community";
 
 export type Notification = {
   id: string;
@@ -15,10 +15,8 @@ export type Notification = {
 };
 
 const TRIGGER_LABELS: Record<NotificationTrigger, string> = {
-  llm: "AI assessment",
-  moderator: "Manual review",
-  community: "Community reports",
   system: "System",
+  community: "Community reports",
 };
 
 export { TRIGGER_LABELS };

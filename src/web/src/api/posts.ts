@@ -8,10 +8,10 @@ export type CreatePostDto = {
 
 export type PostLog = {
   id: string;
-  oldStatus: PostStatus | null;
+  oldStatus: PostStatus;
   newStatus: PostStatus;
   reason: string;
-  triggeredBy: "llm" | "moderator" | "community" | "system";
+  triggeredBy: "system" | "community";
   createdAt: string;
 };
 

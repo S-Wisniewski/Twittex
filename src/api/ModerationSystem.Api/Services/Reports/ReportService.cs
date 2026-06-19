@@ -34,9 +34,8 @@ namespace ModerationSystem.Api.Services.Reports
             if (user == null) return;
 
             var post = await _context.Posts.FirstOrDefaultAsync(p => p.Id == postId);
-            if (post == null || post.Status == PostStatus.Flagged) return; // Don't report already flagged posts
+            if (post == null || post.Status == PostStatus.Rejected || post.Status == PostStatus.Flagged) return;
 
-            // Prevent double reporting
             var existingReport = await _context.Reports.FirstOrDefaultAsync(r => r.PostId == postId && r.CognitoUserId == userId);
             if (existingReport != null) return;
 
@@ -44,16 +43,14 @@ namespace ModerationSystem.Api.Services.Reports
             if (user.ReputationScore >= 80) weight = 2.0;
             else if (user.ReputationScore < 30) weight = 0.2;
 
-            var report = new Report
+            _context.Reports.Add(new Report
             {
                 PostId = postId,
                 CognitoUserId = userId,
                 Reason = request.Reason,
                 Description = request.Description,
                 Weight = weight
-            };
-
-            _context.Reports.Add(report);
+            });
             await _context.SaveChangesAsync();
 
             await CheckRiskScoreAndReevaluateAsync(postId);
@@ -78,53 +75,50 @@ namespace ModerationSystem.Api.Services.Reports
             if (post.User.ReputationScore >= 80) threshold = 7.5;
             else if (post.User.ReputationScore < 30) threshold = 2.5;
 
-            if (riskScore >= threshold)
+            if (riskScore < threshold) return;
+
+            var topReports = reports
+                .OrderByDescending(r => r.User.ReputationScore)
+                .Take(5)
+                .ToList();
+
+            var reportContext = string.Join("\n", topReports.Select(r => $"- Reason: {r.Reason}, Comment: {r.Description ?? "None"}"));
+
+            // Mark as Flagged immediately while AI re-evaluates
+            var preAiStatus = post.Status;
+            post.Status = PostStatus.Flagged;
+            _auditService.AddStatusLog(post.CognitoUserId, post.Id, preAiStatus, PostStatus.Flagged,
+                "Community reports triggered re-review.", "community");
+            await _context.SaveChangesAsync();
+            await _notificationsService.NotifyUserOfPostStatusChange(post, preAiStatus.ToString(),
+                "Your post was reported by the community and is pending automated re-review.", "community");
+
+            var aiDecision = await _aiService.ReevaluatePostAsync(post.Content, reportContext);
+
+            if (aiDecision == PostStatus.Rejected)
             {
-                var topReports = reports
-                    .OrderByDescending(r => r.User.ReputationScore)
-                    .Take(5)
-                    .ToList();
+                post.Status = PostStatus.Rejected;
+                post.User.ReputationScore -= 15.0;
+                foreach (var report in reports) report.User.ReputationScore += 5.0;
 
-                var reportContext = string.Join("\n", topReports.Select(r => $"- Reason: {r.Reason}, Comment: {r.Description ?? "None"}"));
-
-                var aiDecision = await _aiService.ReevaluatePostAsync(post.Content, reportContext);
-
-                if (aiDecision == PostStatus.Flagged)
-                {
-                    var oldStatus = post.Status.ToString();
-                    post.Status = PostStatus.Flagged;
-                    post.User.ReputationScore -= 15.0;
-
-                    foreach (var report in reports)
-                    {
-                        report.User.ReputationScore += 5.0;
-                    }
-
-                    _auditService.AddLog("System", $"Post {post.Id} flagged by AI after community reports.");
-                    await _notificationsService.NotifyUserOfPostStatusChange(
-                        post,
-                        oldStatus,
-                        "Your post was flagged following community reports and AI re-evaluation.",
-                        "community");
-                }
-                else
-                {
-                    // AI decided it's a false alarm
-                    foreach (var report in reports)
-                    {
-                        report.User.ReputationScore -= 3.0;
-                    }
-                    
-                    _auditService.AddLog("System", $"Post {post.Id} reported but cleared by AI. Reporters penalized.");
-                }
-
-                // Soft delete reports so they don't trigger again for the same threshold
-                foreach (var report in reports)
-                {
-                    report.DeletedAt = DateTime.UtcNow;
-                }
-                await _context.SaveChangesAsync();
+                _auditService.AddStatusLog(post.CognitoUserId, post.Id, PostStatus.Flagged, PostStatus.Rejected,
+                    "Automated re-evaluation confirmed the content violates community guidelines.", "system");
+                await _notificationsService.NotifyUserOfPostStatusChange(post, "Flagged",
+                    "Your post was rejected following automated re-evaluation after community reports.", "system");
             }
+            else
+            {
+                post.Status = PostStatus.Published;
+                foreach (var report in reports) report.User.ReputationScore -= 3.0;
+
+                _auditService.AddStatusLog(post.CognitoUserId, post.Id, PostStatus.Flagged, PostStatus.Published,
+                    "Automated re-evaluation found no policy violations. Post restored.", "system");
+                await _notificationsService.NotifyUserOfPostStatusChange(post, "Flagged",
+                    "Your post was cleared after automated re-evaluation and is now live again.", "system");
+            }
+
+            foreach (var report in reports) report.DeletedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
         }
     }
 }

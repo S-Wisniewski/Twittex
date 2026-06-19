@@ -1,5 +1,6 @@
 using ModerationSystem.Api.Data;
 using ModerationSystem.Api.Models.Entities;
+using ModerationSystem.Api.Models.Enums;
 
 namespace ModerationSystem.Api.Services.Audit
 {
@@ -14,13 +15,21 @@ namespace ModerationSystem.Api.Services.Audit
 
         public void AddLog(string cognitoUserId, string content)
         {
-            var log = new Log
+            _db.Add(new Log { CognitoUserId = cognitoUserId, Content = content });
+        }
+
+        public void AddStatusLog(string cognitoUserId, int postId, PostStatus oldStatus, PostStatus newStatus, string reason, string triggeredBy)
+        {
+            _db.Add(new Log
             {
                 CognitoUserId = cognitoUserId,
-                Content = content
-            };
-
-            _db.Add(log);
+                PostId = postId,
+                OldStatus = oldStatus,
+                NewStatus = newStatus,
+                Reason = reason,
+                TriggeredBy = triggeredBy,
+                Content = $"{oldStatus} → {newStatus}",
+            });
         }
     }
 }

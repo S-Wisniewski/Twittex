@@ -6,10 +6,10 @@ import type { PostStatus } from "@/types/Post";
 
 export type TimelineEvent = {
   id: string;
-  oldStatus: PostStatus | null;
+  oldStatus: PostStatus;
   newStatus: PostStatus;
   reason: string;
-  triggeredBy: "llm" | "moderator" | "community" | "system";
+  triggeredBy: "system" | "community";
   createdAt: string;
 };
 
@@ -23,10 +23,8 @@ const STATUS_DOT: Record<PostStatus, string> = {
 };
 
 const TRIGGER_LABEL: Record<TimelineEvent["triggeredBy"], string> = {
-  llm: "AI assessment",
-  moderator: "Manual review",
-  community: "Community reports",
   system: "System",
+  community: "Community reports",
 };
 
 function formatSmartDate(iso: string) {

@@ -22,10 +22,8 @@ const STATUS_COLOR: Record<PostStatus, string> = {
 };
 
 const TRIGGER_LABEL: Record<NotificationTrigger, string> = {
-  llm: "AI assessment",
-  moderator: "Manual review",
-  community: "Community reports",
   system: "System",
+  community: "Community reports",
 };
 
 function formatDate(iso: string) {

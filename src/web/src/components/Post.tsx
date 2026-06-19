@@ -27,8 +27,8 @@ import {
 } from "./ui/dialog";
 import { Textarea } from "./ui/textarea";
 import { toast } from "sonner";
-import PostTimeline, { type TimelineEvent } from "./PostTimeline";
-import { isoMinus } from "@/lib/utils";
+import PostTimeline from "./PostTimeline";
+import { useQuery } from "@tanstack/react-query";
 import type { PostStatus, ReviewType } from "@/types/Post";
 
 type PostProps = {
@@ -49,26 +49,22 @@ const STATUS_CONFIG: Record<
   { label: string; className: string } | null
 > = {
   Published: null,
-  Error: {
-    label: "Moderation error — pending manual review",
-    className: "bg-muted text-muted-foreground",
-  },
   Pending: {
-    label: "Pending review",
+    label: "Pending automated review",
     className: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   },
   Flagged: {
-    label: "Flagged",
+    label: "Reported by the community — pending re-review",
     className: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
   },
-  Review: {
-    label: "Under manual review",
-    className: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-  },
+  Review: null,
   Rejected: {
-    label: "Hidden — policy violation",
-    className:
-      "bg-destructive/10 text-destructive dark:text-destructive-foreground",
+    label: "Removed — policy violation",
+    className: "bg-destructive/10 text-destructive dark:text-destructive-foreground",
+  },
+  Error: {
+    label: "Moderation error — will be reviewed",
+    className: "bg-muted text-muted-foreground",
   },
 };
 
@@ -81,107 +77,6 @@ const REVIEW_TYPE_LABELS: Record<ReviewType, string> = {
   Other: "Other",
 };
 
-function buildMockTimeline(status: PostStatus): TimelineEvent[] {
-  const base: TimelineEvent[] = [
-    {
-      id: "t0",
-      oldStatus: null,
-      newStatus: "Pending",
-      reason: "Post submitted — awaiting automated assessment.",
-      triggeredBy: "system",
-      createdAt: isoMinus({ minutes: 10 }),
-    },
-  ];
-
-  if (status === "Pending") return base;
-
-  if (status === "Published") {
-    return [
-      ...base,
-      {
-        id: "t1",
-        oldStatus: "Pending",
-        newStatus: "Published",
-        reason:
-          "Automated assessment passed. Toxicity score: 0.06/1.0. No policy violations detected.",
-        triggeredBy: "llm",
-        createdAt: isoMinus({ minutes: 7 }),
-      },
-    ];
-  }
-
-  if (status === "Flagged") {
-    return [
-      ...base,
-      {
-        id: "t1",
-        oldStatus: "Pending",
-        newStatus: "Published",
-        reason: "Automated assessment passed. Toxicity score: 0.09/1.0.",
-        triggeredBy: "llm",
-        createdAt: isoMinus({ minutes: 9 }),
-      },
-      {
-        id: "t2",
-        oldStatus: "Published",
-        newStatus: "Flagged",
-        reason:
-          "2 community reports received (weighted score: 1.8). Reason: Misinformation.",
-        triggeredBy: "community",
-        createdAt: isoMinus({ minutes: 5 }),
-      },
-    ];
-  }
-
-  if (status === "Review") {
-    return [
-      ...base,
-      {
-        id: "t1",
-        oldStatus: "Pending",
-        newStatus: "Flagged",
-        reason:
-          "Automated assessment flagged content. Toxicity score: 0.61/1.0.",
-        triggeredBy: "llm",
-        createdAt: isoMinus({ minutes: 8 }),
-      },
-      {
-        id: "t2",
-        oldStatus: "Flagged",
-        newStatus: "Review",
-        reason:
-          "Risk score exceeded threshold (0.82/1.0). Escalated to manual moderator review.",
-        triggeredBy: "system",
-        createdAt: isoMinus({ minutes: 4 }),
-      },
-    ];
-  }
-
-  if (status === "Rejected") {
-    return [
-      ...base,
-      {
-        id: "t1",
-        oldStatus: "Pending",
-        newStatus: "Review",
-        reason: "Automated assessment flagged severe content. Score: 0.91/1.0.",
-        triggeredBy: "llm",
-        createdAt: isoMinus({ minutes: 9 }),
-      },
-      {
-        id: "t2",
-        oldStatus: "Review",
-        newStatus: "Rejected",
-        reason:
-          "Manual review completed. Content violates harassment policy (§3.2). Post permanently hidden.",
-        triggeredBy: "moderator",
-        createdAt: isoMinus({ minutes: 2 }),
-      },
-    ];
-  }
-
-  return base;
-}
 
 function formatSmartDate(iso: string) {
   const date = new Date(iso);
@@ -258,7 +153,12 @@ const Post = ({
   };
 
   const statusConfig = STATUS_CONFIG[post.status];
-  const timeline = isAuthor ? buildMockTimeline(post.status) : [];
+
+  const { data: logs = [] } = useQuery({
+    queryKey: ["posts", post.id, "logs"],
+    queryFn: () => postsApi.getLogs(post.id),
+    enabled: isAuthor && post.status !== "Published",
+  });
 
   return (
     <Item variant={"outline"} className={cn("gap-2", className)}>
@@ -352,7 +252,7 @@ const Post = ({
         {post.content}
       </ItemContent>
 
-      {isAuthor && <PostTimeline events={timeline} className="px-1" />}
+      {isAuthor && logs.length > 0 && <PostTimeline events={logs} className="px-1" />}
 
       <ItemFooter>
         <ItemActions className={threadIndent ? "pl-12" : undefined}>

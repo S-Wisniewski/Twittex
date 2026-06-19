@@ -65,10 +65,11 @@ namespace ModerationSystem.Api.Services.Ai
                 using var document = JsonDocument.Parse(responseBody);
                 var text = document.RootElement.GetProperty("output").GetProperty("message").GetProperty("content")[0].GetProperty("text").GetString()?.Trim() ?? "";
 
-                if (text.Contains("Flagged", StringComparison.OrdinalIgnoreCase))
+                if (text.Contains("Rejected", StringComparison.OrdinalIgnoreCase) ||
+                    text.Contains("Flagged", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("\n>>> [AiService] Model evaluated content as Flagged.\n");
-                    return PostStatus.Flagged;
+                    Console.WriteLine("\n>>> [AiService] Model evaluated content as Rejected.\n");
+                    return PostStatus.Rejected;
                 }
 
                 return PostStatus.Published;
@@ -88,7 +89,7 @@ namespace ModerationSystem.Api.Services.Ai
                 {
                     messages = new[]
                     {
-                        new { role = "user", content = new[] { new { text = $"Re-evaluate the following content based on community reports. If the content violates community guidelines, respond with EXACTLY ONE WORD: 'Flagged'. If the content is safe and reports are false alarms, respond with 'Published'.\n\nContent:\n{content}\n\nCommunity Reports Context:\n{reportContext}" } } }
+                        new { role = "user", content = new[] { new { text = $"Re-evaluate the following content based on community reports. If the content violates community guidelines, respond with EXACTLY ONE WORD: 'Rejected'. If the content is safe and reports are false alarms, respond with 'Published'.\n\nContent:\n{content}\n\nCommunity Reports Context:\n{reportContext}" } } }
                     },
                     inferenceConfig = new { maxTokens = 50 }
                 };
@@ -113,10 +114,11 @@ namespace ModerationSystem.Api.Services.Ai
 
                 Console.WriteLine($"\n>>> [AiService RAW] {text}\n");
 
-                if (text.Contains("Flagged", StringComparison.OrdinalIgnoreCase))
+                if (text.Contains("Rejected", StringComparison.OrdinalIgnoreCase) ||
+                    text.Contains("Flagged", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("\n>>> [AiService] Re-evaluation: Model evaluated content as Flagged.\n");
-                    return PostStatus.Flagged;
+                    Console.WriteLine("\n>>> [AiService] Re-evaluation: Model evaluated content as Rejected.\n");
+                    return PostStatus.Rejected;
                 }
 
                 Console.WriteLine("\n>>> [AiService] Re-evaluation: Model evaluated content as Published.\n");
