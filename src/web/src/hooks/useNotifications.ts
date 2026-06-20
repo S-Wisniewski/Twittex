@@ -65,7 +65,7 @@ export function useNotifications() {
       triggeredBy: NotificationTrigger;
     }) => {
       const notification: Notification = {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         postId: payload.id,
         postExcerpt: payload.postExcerpt ?? "",
         oldStatus: payload.oldStatus ?? "Pending",
