@@ -16,56 +16,13 @@ import type { Post as PostType } from "@/types/Post";
 
 const THREAD_LINE_X = 36;
 
-type CommentNode = PostType & { replies?: PostType[] };
-
-type ReplyingTo = { parentCommentId: string; displayName: string } | null;
-
-const CommentThread = ({
-  comment,
-  onReplyClick,
-}: {
-  comment: CommentNode;
-  onReplyClick: (target: ReplyingTo) => void;
-}) => {
+const CommentThread = ({ comment }: { comment: PostType }) => {
   const { currentUser } = useAuth();
-  const isAuthor = comment.userId === currentUser?.id;
-
   return (
-    <div className="flex flex-col gap-2">
-      <Post
-        post={comment}
-        disableComments
-        isAuthor={isAuthor}
-        onReply={() =>
-          onReplyClick({
-            parentCommentId: comment.id,
-            displayName: comment.userName,
-          })
-        }
-      />
-
-      {comment.replies && comment.replies.length > 0 && (
-        <div className="flex gap-3 pl-4">
-          <div className="w-px bg-border shrink-0 rounded-full" />
-          <div className="flex flex-col gap-2 flex-1">
-            {comment.replies.map((reply) => (
-              <Post
-                key={reply.id}
-                post={reply}
-                disableComments
-                isAuthor={reply.userId === currentUser?.id}
-                onReply={() =>
-                  onReplyClick({
-                    parentCommentId: comment.id,
-                    displayName: reply.userName,
-                  })
-                }
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <Post
+      post={comment}
+      isAuthor={comment.userId === currentUser?.id}
+    />
   );
 };
 
@@ -75,7 +32,6 @@ const PostPage = () => {
   const { currentUser } = useAuth();
   const gate = useAuthGate();
   const queryClient = useQueryClient();
-  const [replyingTo, setReplyingTo] = useState<ReplyingTo>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: post } = useQuery({
@@ -84,7 +40,7 @@ const PostPage = () => {
     enabled: !!postId,
   });
 
-  const { data: serverComments = [] } = useQuery({
+  const { data: comments = [] } = useQuery({
     queryKey: ["comments", postId],
     queryFn: () => postsApi.getComments(postId!),
     enabled: !!postId,
@@ -96,28 +52,14 @@ const PostPage = () => {
     enabled: !!postId && !!post?.parentPostId,
   });
 
-  const comments: CommentNode[] = serverComments.map((c) => ({
-    ...c,
-    replies: [],
-  }));
-
-  const handleReplyClick = (target: ReplyingTo) => {
-    setReplyingTo(target);
-    setDialogOpen(true);
-  };
-
   const handleReply = (content: string) => {
     postsApi
-      .create({
-        content,
-        parentPostId: Number(replyingTo?.parentCommentId ?? postId),
-      })
+      .create({ content, parentPostId: Number(postId) })
       .then(() => {
         queryClient.invalidateQueries({ queryKey: ["comments", postId] });
         queryClient.invalidateQueries({ queryKey: ["post", postId] });
       })
       .catch(() => toast.error(t("postPage.replyFailed")));
-    setReplyingTo(null);
   };
 
   if (!post) {
@@ -186,7 +128,6 @@ const PostPage = () => {
               return;
             }
             setDialogOpen(false);
-            setReplyingTo(null);
           }}
           trigger={
             <Button variant="outline">
@@ -196,7 +137,7 @@ const PostPage = () => {
           }
           userName={currentUser?.userName ?? ""}
           userAvatarUrl={currentUser?.userAvatarUrl ?? ""}
-          replyingTo={replyingTo?.displayName}
+          replyingTo={post.userName}
           onSubmit={handleReply}
         />
       </div>
@@ -205,11 +146,7 @@ const PostPage = () => {
 
       <div className="flex flex-col gap-6">
         {comments.map((comment) => (
-          <CommentThread
-            key={comment.id}
-            comment={comment}
-            onReplyClick={handleReplyClick}
-          />
+          <CommentThread key={comment.id} comment={comment} />
         ))}
       </div>
     </div>

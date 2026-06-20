@@ -70,7 +70,7 @@ async function request<T>(
     },
   });
 
-  if (res.status === 401 && !isRetry) {
+  if (res.status === 401 && !isRetry && getAuthToken()) {
     const newToken = await tryRefresh();
     if (newToken) {
       return request<T>(path, options, true);
