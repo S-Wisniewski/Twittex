@@ -86,7 +86,17 @@ const Profile = () => {
 
   const copyHandleHandler = () => {
     if (!copyHandle && user) {
-      navigator.clipboard.writeText(`@${user.userName}`);
+      const text = `@${user.userName}`;
+      const copy = navigator.clipboard?.writeText(text) ?? Promise.reject();
+      copy.catch(() => {
+        const el = document.createElement("textarea");
+        el.value = text;
+        el.style.cssText = "position:fixed;opacity:0";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      });
       setCopyHandle(true);
       setTimeout(() => setCopyHandle(false), 4000);
     }

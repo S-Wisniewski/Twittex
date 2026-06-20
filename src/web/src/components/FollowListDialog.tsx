@@ -27,7 +27,7 @@ function UserList({ users, isLoading, empty, onClose }: {
       {users.map((user) => (
         <li key={user.id}>
           <Link
-            to={`/profile/${user.userName}`}
+            to={`/${user.userName}`}
             onClick={onClose}
             className="flex items-center gap-3 px-5 py-3 hover:bg-muted/50 transition-colors"
           >

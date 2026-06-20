@@ -343,9 +343,19 @@ const Post = ({
             className="cursor-pointer text-muted-foreground ml-1"
             onClick={() => {
               const url = `${window.location.origin}/${post.userName}/post/${post.id}`;
-              navigator.clipboard.writeText(url).then(() =>
-                toast.success(t("post.toasts.linkCopied")),
-              );
+              const copy = navigator.clipboard?.writeText(url) ?? Promise.reject();
+              copy
+                .then(() => toast.success(t("post.toasts.linkCopied")))
+                .catch(() => {
+                  const el = document.createElement("textarea");
+                  el.value = url;
+                  el.style.cssText = "position:fixed;opacity:0";
+                  document.body.appendChild(el);
+                  el.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(el);
+                  toast.success(t("post.toasts.linkCopied"));
+                });
             }}
           >
             <Link2 className="size-4" />
