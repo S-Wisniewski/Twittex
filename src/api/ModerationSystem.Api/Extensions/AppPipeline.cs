@@ -18,13 +18,9 @@ namespace ModerationSystem.Api.Extensions
                         .WithTheme(ScalarTheme.Moon)
                         .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
                 });
-            }
-            else
-            {
-                app.UseHsts();
-            }
 
-            app.UseHttpsRedirection();
+                app.UseHttpsRedirection();
+            }
 
             // Diagnostic Middleware
             app.Use(async (context, next) =>
