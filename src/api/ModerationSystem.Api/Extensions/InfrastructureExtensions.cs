@@ -14,7 +14,7 @@ namespace ModerationSystem.Api.Extensions
                         .GetSection("Cors:AllowedOrigins")
                         .Get<string[]>() ?? [
                             "http://localhost:5173",
-                            "http://18.198.210.240:3000"
+                            "http://35.156.210.84:3000"
                         ];
 
                     policy
